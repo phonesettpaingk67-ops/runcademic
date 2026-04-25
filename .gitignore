@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+runcademic-frontend/node_modules/
+
+# Environment variables - NEVER commit
+.env
+.env.local
+.env.production
+.env.development
+
+# Build output
+dist/
+runcademic-frontend/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+*.local
+
+# Debug/test/migration scripts
+check-schema.js
+debug-test.js
+debug-workflow.js
+drop-tables.js
+fix-role-constraint.js
+fix-schema.js
+migrate-workflow.js
+test-all-endpoints.js
+test-comprehensive.js
+test-workflow.js
+
+# Junk images
+HOMERA.png
+htmlra.png
+logo_html.png
+logo_menu.png
+RA.png
+
+# Excessive docs
+ARCHITECTURE.md
+CLEANUP_SUMMARY.md
+DEMO_CREDENTIALS.md
+QUICK_START.md
+SETUP_POSTGRESQL_WINDOWS.md
+SYSTEM_REVIEW_REPORT.md
+docs/
+
+# Scripts folder
+scripts/
+
+# Unused frontend files
+runcademic-frontend/FRONTEND_COMPLETE.md
+runcademic-frontend/src/pages/Support.jsx
+runcademic-frontend/src/pages/TicketDetailPage.jsx

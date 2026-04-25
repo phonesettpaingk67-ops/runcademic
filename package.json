@@ -1,0 +1,43 @@
+{
+    "name": "runcademic-agent",
+    "version": "1.0.0",
+    "description": "Full-stack web app agent with GitHub OAuth and Linear integration",
+    "type": "module",
+    "main": "src/server.js",
+    "scripts": {
+        "dev": "node --watch src/server.js",
+        "dev:frontend": "cd runcademic-frontend && npm run dev",
+        "dev:all": "concurrently \"npm run dev\" \"npm run dev:frontend\"",
+        "start": "node src/server.js",
+        "build": "cd runcademic-frontend && npm install && npm run build",
+        "test": "echo 'Test script to be configured'"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "bcrypt": "^6.0.0",
+        "cors": "^2.8.6",
+        "dotenv": "^16.6.1",
+        "express": "^4.18.2",
+        "express-session": "^1.19.0",
+        "joi": "^17.11.0",
+        "jsonwebtoken": "^9.0.0",
+        "passport": "^0.7.0",
+        "passport-github2": "^0.1.12",
+        "passport-local": "^1.0.0",
+        "pg": "^8.11.3"
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.1",
+        "nodemon": "^3.0.1"
+    },
+    "keywords": [
+        "web-app",
+        "github-oauth",
+        "linear-integration",
+        "fullstack"
+    ],
+    "author": "",
+    "license": "MIT"
+}
