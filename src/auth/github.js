@@ -4,17 +4,16 @@ import { queryOne, insert } from '../lib/database.js';
 
 // Configure GitHub OAuth Strategy
 export function initializeGitHub() {
-  // Check env variables at strategy initialization time
   const {
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
     GITHUB_CALLBACK_URL,
   } = process.env;
 
+  // Skip GitHub OAuth if credentials not provided
   if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
-    throw new Error(`Missing GitHub OAuth credentials. Check .env file.
-    GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-    GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}`);
+    console.warn('⚠️  GitHub OAuth not configured — skipping. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to enable.');
+    return;
   }
 
   passport.use(
@@ -27,14 +26,12 @@ export function initializeGitHub() {
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          // Check if user exists by github_id
           let user = await queryOne(
             'SELECT * FROM users WHERE github_id = $1',
             [profile.id.toString()]
           );
 
           if (!user) {
-            // Create new user from GitHub profile
             const newUser = await insert('users', {
               github_id: profile.id.toString(),
               github_username: profile.username,
@@ -55,14 +52,14 @@ export function initializeGitHub() {
       }
     )
   );
+
+  console.log('✅ GitHub OAuth initialized');
 }
 
-// Serialize user to session
 passport.serializeUser((user, done) => {
   done(null, user.user_id);
 });
 
-// Deserialize user from session
 passport.deserializeUser(async (userId, done) => {
   try {
     const user = await queryOne(
