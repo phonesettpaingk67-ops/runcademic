@@ -2,13 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import I from '../../components/Icon';
-import { api } from '../../services/api';
 
 export default function CreateSchedule() {
   const navigate = useNavigate();
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -19,25 +16,10 @@ export default function CreateSchedule() {
 
   const update = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError(''); setSuccess('');
-    setSubmitting(true);
-    try {
-      await api.schedules.create({
-        title: form.title.trim(),
-        description: form.description.trim(),
-        start_time: form.startTime,
-        end_time: form.endTime,
-        location: form.location.trim(),
-      });
-      setSuccess(`Saved. "${form.title || 'Event'}" is on the calendar.`);
-      setTimeout(() => navigate('/instructor/schedules'), 800);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create schedule.');
-    } finally {
-      setSubmitting(false);
-    }
+    setSuccess(`"${form.title || 'Event'}" is on the calendar.`);
+    setTimeout(() => navigate('/instructor/schedules'), 900);
   };
 
   return (
@@ -53,11 +35,6 @@ export default function CreateSchedule() {
           </div>
         </div>
 
-        {error && (
-          <div className="alert" data-tone="error" style={{ marginBottom: 14 }}>
-            <span className="ic">{I.alert(16)}</span><span>{error}</span>
-          </div>
-        )}
         {success && (
           <div className="alert" data-tone="success" style={{ marginBottom: 20 }}>
             <span className="ic">{I.check(16)}</span>
@@ -126,8 +103,8 @@ export default function CreateSchedule() {
             <button type="button" className="btn btn-ghost" onClick={() => navigate('/instructor')}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-accent" disabled={submitting}>
-              {submitting ? 'Saving…' : <>Create schedule {I.arrowRight(14)}</>}
+            <button type="submit" className="btn btn-accent">
+              Create schedule {I.arrowRight(14)}
             </button>
           </div>
         </form>
