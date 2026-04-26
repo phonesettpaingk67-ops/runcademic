@@ -7,16 +7,22 @@ import { asyncHandler, AppError } from '../middleware/errorHandler.js';
 
 const router = express.Router();
 const SALT_ROUNDS = 10;
+const ALLOWED_REGISTER_ROLES = ['student', 'instructor', 'admin'];
 
 /**
  * Email/Password Registration
  * POST /auth/register or /auth/signup
  */
 router.post(['/register', '/signup'], asyncHandler(async (req, res) => {
-  const { email, password, firstName, lastName } = req.body;
+  const { name, email, password, role, firstName, lastName } = req.body;
 
-  if (!email || !password) {
-    throw new AppError('Email and password required', 400, 'MISSING_FIELDS');
+  if (!name || !email || !password || !role) {
+    throw new AppError('Name, email, password, and role are required', 400, 'MISSING_FIELDS');
+  }
+
+  const normalizedRole = String(role).toLowerCase();
+  if (!ALLOWED_REGISTER_ROLES.includes(normalizedRole)) {
+    throw new AppError('Invalid role', 400, 'INVALID_ROLE');
   }
 
   // Check if user exists
@@ -28,14 +34,19 @@ router.post(['/register', '/signup'], asyncHandler(async (req, res) => {
   // Hash password
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
+  const normalizedName = String(name).trim();
+  const nameParts = normalizedName.split(/\s+/).filter(Boolean);
+  const derivedFirstName = firstName || nameParts[0] || email.split('@')[0];
+  const derivedLastName = lastName || nameParts.slice(1).join(' ');
+
   // Create user
   const result = await insert('users', {
     email,
     password_hash: passwordHash,
-    first_name: firstName || email.split('@')[0],
-    last_name: lastName || '',
+    first_name: derivedFirstName,
+    last_name: derivedLastName,
     username: email,
-    role: 'student',
+    role: normalizedRole,
   });
 
   const user = result;

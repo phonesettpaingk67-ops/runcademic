@@ -33,6 +33,7 @@ export default apiClient;
 export const api = {
   auth: {
     login: (credentials) => apiClient.post('/api/auth/login', credentials),
+    register: (data) => apiClient.post('/api/auth/register', data),
     logout: () => apiClient.get('/api/auth/logout'),
   },
   users: {

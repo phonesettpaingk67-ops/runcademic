@@ -1,8 +1,10 @@
 import Layout from '../../components/Layout';
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 
 export default function AssignedTickets() {
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -49,6 +51,13 @@ export default function AssignedTickets() {
     }
   };
 
+  const handleRowClick = (event, ticketId) => {
+    if (event.target.closest('select') || event.target.closest('a') || event.target.closest('button')) {
+      return;
+    }
+    navigate(`/instructor/tickets/${ticketId}`);
+  };
+
   return (
     <Layout role="instructor">
       <div className="space-y-6">
@@ -79,11 +88,16 @@ export default function AssignedTickets() {
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Priority</th>
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th>
+                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {tickets.map((ticket) => (
-                    <tr key={ticket.id} className="hover:bg-gray-50/50 transition-colors">
+                    <tr
+                      key={ticket.id}
+                      onClick={(event) => handleRowClick(event, ticket.id)}
+                      className="cursor-pointer hover:bg-gray-50/60 transition-colors"
+                    >
                       <td className="px-5 py-4 text-sm text-gray-600">#{ticket.id}</td>
                       <td className="px-5 py-4 text-sm font-semibold text-gray-800">{ticket.title}</td>
                       <td className="px-5 py-4 text-sm text-gray-600 capitalize">{ticket.department}</td>
@@ -102,6 +116,14 @@ export default function AssignedTickets() {
                         </select>
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-500">{ticket.created}</td>
+                      <td className="px-5 py-4">
+                        <Link
+                          to={`/instructor/tickets/${ticket.id}`}
+                          className="text-sm font-semibold text-[#E05F6B] hover:underline"
+                        >
+                          View Details →
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

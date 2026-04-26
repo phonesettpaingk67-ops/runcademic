@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   GraduationCap,
@@ -18,9 +18,9 @@ import { api } from '../services/api';
 import { animateLogin, animateList } from '../utils/animations';
 
 const ROLES = [
-  { key: 'student',    label: 'Student',    desc: 'Access courses & submit tickets', icon: GraduationCap },
-  { key: 'instructor', label: 'Instructor', desc: 'Manage classes & assignments',     icon: School },
-  { key: 'admin',      label: 'Admin',      desc: 'Full system administration',       icon: ShieldCheck },
+  { key: 'student', label: 'Student', desc: 'Access courses & submit tickets', icon: GraduationCap },
+  { key: 'instructor', label: 'Instructor', desc: 'Manage classes & assignments', icon: School },
+  { key: 'admin', label: 'Admin', desc: 'Full system administration', icon: ShieldCheck },
 ];
 
 const FEATURES = [
@@ -29,23 +29,20 @@ const FEATURES = [
   { icon: Zap, label: 'Real-time Updates', desc: 'Stay notified on all changes instantly' },
 ];
 
-const DEMO = {
-  student:    { email: 'student@runcademic.com',    password: 'student123' },
-  instructor: { email: 'instructor@runcademic.com', password: 'instructor123' },
-  admin:      { email: 'admin@runcademic.com',       password: 'admin123' },
-};
-
 const ROUTABLE_ROLES = new Set(['student', 'instructor', 'admin']);
 
-export default function Login() {
+export default function Register() {
   const navigate = useNavigate();
-  const [step, setStep] = useState('role'); // 'role' | 'form'
+  const [step, setStep] = useState('role');
   const [selectedRole, setSelectedRole] = useState(null);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const selectedRoleObj = ROLES.find((r) => r.key === selectedRole);
   const SelectedRoleIcon = selectedRoleObj?.icon || ShieldCheck;
 
@@ -54,9 +51,6 @@ export default function Login() {
       const u = JSON.parse(localStorage.getItem('runcademic_user') || 'null');
       if (u?.role && ROUTABLE_ROLES.has(u.role)) {
         navigate(`/${u.role}`, { replace: true });
-      } else if (u?.role) {
-        localStorage.removeItem('runcademic_user');
-        localStorage.removeItem('access_token');
       }
     } catch {
       localStorage.removeItem('runcademic_user');
@@ -65,7 +59,7 @@ export default function Login() {
   }, [navigate]);
 
   useEffect(() => {
-    animateLogin('.login-panel');
+    animateLogin('.register-panel');
   }, []);
 
   useEffect(() => {
@@ -76,33 +70,49 @@ export default function Login() {
 
   const handleSelectRole = (role) => {
     setSelectedRole(role);
-    setEmail(DEMO[role].email);
-    setPassword(DEMO[role].password);
+    setName('');
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
     setError('');
     setStep('form');
   };
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
+
+    if (!name || !email || !password || !confirmPassword) {
+      setError('Please fill in all fields.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
     setError('');
+
     try {
-      const { data } = await api.auth.login({ email, password });
-      if (!ROUTABLE_ROLES.has(data.user.role)) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('runcademic_user');
-        setError('This account role is not supported in the current app routing.');
-        return;
-      }
+      const { data } = await api.auth.register({
+        name,
+        email,
+        password,
+        role: selectedRole,
+      });
+
       localStorage.setItem('access_token', data.token);
       localStorage.setItem('runcademic_user', JSON.stringify({
-        id: data.user.id, email: data.user.email,
-        name: data.user.name, role: data.user.role,
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role,
       }));
+
       navigate(`/${data.user.role}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -122,27 +132,27 @@ export default function Login() {
 
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white leading-snug mb-4">
-            Manage your<br />
+            Join your<br />
             <span className="text-[#E05F6B]">university</span><br />
-            seamlessly.
+            workspace.
           </h1>
           <p className="text-slate-400 text-sm leading-relaxed">
-            A centralized platform for tickets, scheduling, and task management across your institution.
+            Create your account to submit tickets, manage schedules, and collaborate with your institution.
           </p>
 
           <div className="mt-10 space-y-4">
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
-              <div key={f.label} className="flex items-start gap-3">
-                <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-                  <Icon size={16} className="text-[#E05F6B]" />
+                <div key={f.label} className="flex items-start gap-3">
+                  <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
+                    <Icon size={16} className="text-[#E05F6B]" />
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-semibold">{f.label}</p>
+                    <p className="text-slate-500 text-xs">{f.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white text-sm font-semibold">{f.label}</p>
-                  <p className="text-slate-500 text-xs">{f.desc}</p>
-                </div>
-              </div>
               );
             })}
           </div>
@@ -153,12 +163,11 @@ export default function Login() {
 
       {/* Right panel */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-[#F5F6FA]">
-        <div className="login-panel w-full max-w-md">
-
+        <div className="register-panel w-full max-w-md">
           {step === 'role' ? (
             <>
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Create account</h2>
                 <p className="text-gray-500 text-sm mt-1">Select your role to continue</p>
               </div>
 
@@ -183,6 +192,11 @@ export default function Login() {
                   );
                 })}
               </div>
+
+              <p className="text-sm text-gray-500 mt-6">
+                Already have an account?{' '}
+                <Link to="/login" className="text-[#E05F6B] font-semibold hover:underline">Sign in</Link>
+              </p>
             </>
           ) : (
             <>
@@ -199,18 +213,36 @@ export default function Login() {
                   <SelectedRoleIcon size={20} className="text-[#E05F6B]" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Sign in</h2>
-                  <p className="text-gray-400 text-sm capitalize">{selectedRole} account</p>
+                  <h2 className="text-2xl font-bold text-gray-900">Create account</h2>
+                  <p className="text-gray-400 text-sm capitalize">{selectedRole} registration</p>
                 </div>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              {selectedRole === 'admin' && (
+                <div className="mb-4 flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 text-sm">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <p>Admin accounts require approval. Contact your system administrator.</p>
+                </div>
+              )}
+
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Full Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
+                    placeholder="Your full name"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email address</label>
                   <input
                     type="email"
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
                     placeholder="you@example.com"
                   />
@@ -222,9 +254,9 @@ export default function Login() {
                     <input
                       type={showPass ? 'text' : 'password'}
                       value={password}
-                      onChange={e => setPassword(e.target.value)}
+                      onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-4 py-3 pr-11 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
-                      placeholder="••••••••"
+                      placeholder="Create a password"
                     />
                     <button
                       type="button"
@@ -232,6 +264,26 @@ export default function Login() {
                       className="btn-press absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Confirm Password</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPass ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-4 py-3 pr-11 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
+                      placeholder="Confirm your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPass(!showConfirmPass)}
+                      className="btn-press absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPass ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                 </div>
@@ -251,20 +303,15 @@ export default function Login() {
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
                       <Loader2 size={16} className="animate-spin" />
-                      Signing in...
+                      Creating account...
                     </span>
-                  ) : 'Sign in'}
+                  ) : 'Create Account'}
                 </button>
 
                 <p className="text-sm text-gray-500 text-center">
-                  Don&apos;t have an account?{' '}
-                  <Link to="/register" className="text-[#E05F6B] font-semibold hover:underline">Sign up</Link>
+                  Already have an account?{' '}
+                  <Link to="/login" className="text-[#E05F6B] font-semibold hover:underline">Sign in</Link>
                 </p>
-
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <p className="text-xs text-gray-400 font-medium mb-1">Demo credentials (pre-filled)</p>
-                  <p className="text-xs text-gray-500">{DEMO[selectedRole]?.email}</p>
-                </div>
               </form>
             </>
           )}

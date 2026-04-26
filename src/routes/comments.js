@@ -13,6 +13,70 @@ import { queryOne, queryMany, insert, update, deleteRow, paginate } from '../lib
 const router = express.Router();
 
 /**
+ * GET /comments?ticket_id=X - Get all comments for a ticket
+ */
+router.get('/', authenticateJWT, asyncHandler(async (req, res) => {
+  const ticketId = parseInt(req.query.ticket_id, 10);
+  if (!ticketId) {
+    throw new AppError('ticket_id query parameter is required', 400, 'MISSING_TICKET_ID');
+  }
+
+  const ticket = await queryOne('SELECT id FROM tickets WHERE id = $1', [ticketId]);
+  if (!ticket) {
+    throw new AppError('Ticket not found', 404, 'TICKET_NOT_FOUND');
+  }
+
+  const text = `
+    SELECT c.*, CONCAT(u.first_name, ' ', u.last_name) as author_name, u.role as author_role
+    FROM comments c
+    LEFT JOIN users u ON c.user_id = u.user_id
+    WHERE c.ticket_id = $1
+    ORDER BY c.created_at ASC
+  `;
+
+  const comments = await queryMany(text, [ticketId]);
+  res.json({
+    data: comments,
+    total: comments.length
+  });
+}));
+
+/**
+ * POST /comments - Create new comment
+ * Body: ticket_id, comment_text
+ */
+router.post(
+  '/',
+  authenticateJWT,
+  validate(schemas.createComment),
+  asyncHandler(async (req, res) => {
+    const ticketId = parseInt(req.body.ticket_id, 10);
+    const { comment_text } = req.validatedBody;
+
+    if (!ticketId) {
+      throw new AppError('ticket_id is required', 400, 'MISSING_TICKET_ID');
+    }
+
+    const ticket = await queryOne('SELECT id FROM tickets WHERE id = $1', [ticketId]);
+    if (!ticket) {
+      throw new AppError('Ticket not found', 404, 'TICKET_NOT_FOUND');
+    }
+
+    const comment = await insert('comments', {
+      ticket_id: ticketId,
+      user_id: req.user.id,
+      comment_text,
+      created_at: new Date()
+    });
+
+    res.status(201).json({
+      message: 'Comment added successfully',
+      data: comment
+    });
+  })
+);
+
+/**
  * GET /tickets/:ticketId/comments - Get all comments for a ticket
  */
 router.get('/:ticketId/comments', authenticateJWT, asyncHandler(async (req, res) => {

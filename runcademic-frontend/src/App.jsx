@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 
 // Pages
 import Login from './pages/Login';
+import Register from './pages/Register';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -14,6 +15,7 @@ import Notifications from './pages/student/Notifications';
 // Instructor Pages
 import InstructorDashboard from './pages/instructor/InstructorDashboard';
 import AssignedTickets from './pages/instructor/AssignedTickets';
+import TicketDetail from './pages/instructor/TicketDetail';
 import CreateSchedule from './pages/instructor/CreateSchedule';
 import MySchedules from './pages/instructor/MySchedules';
 import Tasks from './pages/instructor/Tasks';
@@ -54,6 +56,7 @@ export default function App() {
       <Routes>
         {/* Login */}
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         {/* Student Routes */}
         <Route
@@ -111,6 +114,14 @@ export default function App() {
           element={
             <ProtectedRoute requiredRole="instructor">
               <AssignedTickets />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/instructor/tickets/:id"
+          element={
+            <ProtectedRoute requiredRole="instructor">
+              <TicketDetail />
             </ProtectedRoute>
           }
         />
