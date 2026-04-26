@@ -1,53 +1,33 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  GraduationCap,
-  School,
-  ShieldCheck,
-  Ticket,
-  CalendarDays,
-  Zap,
-  ChevronRight,
-  ChevronLeft,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { animateLogin, animateList } from '../utils/animations';
+import I from '../components/Icon';
 
 const ROLES = [
-  { key: 'student',    label: 'Student',    desc: 'Access courses & submit tickets', icon: GraduationCap },
-  { key: 'instructor', label: 'Instructor', desc: 'Manage classes & assignments',     icon: School },
-  { key: 'admin',      label: 'Admin',      desc: 'Full system administration',       icon: ShieldCheck },
+  { key: 'student',    name: 'Student',       desc: 'Submit tickets, browse schedules, track requests.', icon: I.capStudent(22) },
+  { key: 'instructor', name: 'Instructor',    desc: 'Manage assigned tickets, schedules, and tasks.',     icon: I.feather(22) },
+  { key: 'admin',      name: 'Administrator', desc: 'Oversee tickets, users, departments, analytics.',    icon: I.shield(22) },
 ];
 
-const FEATURES = [
-  { icon: Ticket, label: 'Smart Ticketing', desc: 'Submit and track service requests easily' },
-  { icon: CalendarDays, label: 'Schedule Management', desc: 'Organize events and appointments' },
-  { icon: Zap, label: 'Real-time Updates', desc: 'Stay notified on all changes instantly' },
-];
+const ROLE_LABEL = { student: 'Student', instructor: 'Instructor', admin: 'Administrator' };
 
 const DEMO = {
   student:    { email: 'student@runcademic.com',    password: 'student123' },
   instructor: { email: 'instructor@runcademic.com', password: 'instructor123' },
-  admin:      { email: 'admin@runcademic.com',       password: 'admin123' },
+  admin:      { email: 'admin@runcademic.com',      password: 'admin123' },
 };
 
 const ROUTABLE_ROLES = new Set(['student', 'instructor', 'admin']);
 
 export default function Login() {
   const navigate = useNavigate();
-  const [step, setStep] = useState('role'); // 'role' | 'form'
-  const [selectedRole, setSelectedRole] = useState(null);
+  const [step, setStep] = useState(1);
+  const [role, setRole] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-  const selectedRoleObj = ROLES.find((r) => r.key === selectedRole);
-  const SelectedRoleIcon = selectedRoleObj?.icon || ShieldCheck;
+  const [showPw, setShowPw] = useState(false);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     try {
@@ -64,35 +44,25 @@ export default function Login() {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    animateLogin('.login-panel');
-  }, []);
-
-  useEffect(() => {
-    if (step === 'role') {
-      animateList('.role-btn');
-    }
-  }, [step]);
-
-  const handleSelectRole = (role) => {
-    setSelectedRole(role);
-    setEmail(DEMO[role].email);
-    setPassword(DEMO[role].password);
-    setError('');
-    setStep('form');
+  const pickRole = (r) => {
+    setRole(r);
+    setEmail(DEMO[r].email);
+    setPassword(DEMO[r].password);
+    setErr('');
+    setStep(2);
   };
 
-  const handleLogin = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
-    setLoading(true);
-    setError('');
+    if (!email || !password) { setErr('Please fill in all fields.'); return; }
+    setBusy(true);
+    setErr('');
     try {
       const { data } = await api.auth.login({ email, password });
       if (!ROUTABLE_ROLES.has(data.user.role)) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('runcademic_user');
-        setError('This account role is not supported in the current app routing.');
+        setErr('This account role is not supported in the current app routing.');
         return;
       }
       localStorage.setItem('access_token', data.token);
@@ -101,175 +71,139 @@ export default function Login() {
         name: data.user.name, role: data.user.role,
       }));
       navigate(`/${data.user.role}`);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+    } catch (e2) {
+      setErr(e2.response?.data?.message || 'Invalid credentials. Please try again.');
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left panel */}
-      <div className="w-full lg:w-2/5 bg-[#141C27] flex flex-col justify-between p-6 sm:p-8 lg:p-12 min-h-[360px] lg:min-h-screen">
-        <div className="pt-1">
-          <img
-            src="/runcademic-home-logo.png"
-            alt="Runcademic logo"
-            className="w-[190px] sm:w-[220px] lg:w-[240px] h-auto object-contain"
-          />
+    <div className="login-shell">
+      <aside className="login-aside">
+        <div className="login-mark-row">
+          <span className="em" style={{ fontSize: 28 }}>R</span>
+          <span>Runcademic</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.14em', marginLeft: 'auto' }}>EST. 2026 · v4.0</span>
         </div>
+        <h2>The university, <span className="em">in order.</span></h2>
+        <p className="lede">A single workspace for tickets, schedules, and the people who keep a campus running. Quiet by design — every action where you'd expect it.</p>
 
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white leading-snug mb-4">
-            Manage your<br />
-            <span className="text-[#E05F6B]">university</span><br />
-            seamlessly.
-          </h1>
-          <p className="text-slate-400 text-sm leading-relaxed">
-            A centralized platform for tickets, scheduling, and task management across your institution.
-          </p>
-
-          <div className="mt-10 space-y-4">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-              <div key={f.label} className="flex items-start gap-3">
-                <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-                  <Icon size={16} className="text-[#E05F6B]" />
-                </div>
-                <div>
-                  <p className="text-white text-sm font-semibold">{f.label}</p>
-                  <p className="text-slate-500 text-xs">{f.desc}</p>
-                </div>
-              </div>
-              );
-            })}
+        <div className="feature-list">
+          <div className="feature">
+            <div className="feature-num">01</div>
+            <div>
+              <div className="feature-name">Smart Ticketing</div>
+              <div className="feature-desc">Routed by department, prioritized by urgency, tracked through resolution.</div>
+            </div>
+          </div>
+          <div className="feature">
+            <div className="feature-num">02</div>
+            <div>
+              <div className="feature-name">Schedule Management</div>
+              <div className="feature-desc">Lectures, labs, office hours — for students, faculty and rooms alike.</div>
+            </div>
+          </div>
+          <div className="feature">
+            <div className="feature-num">03</div>
+            <div>
+              <div className="feature-name">Real-time Updates</div>
+              <div className="feature-desc">Lifecycle notifications the moment a ticket changes hands.</div>
+            </div>
           </div>
         </div>
+      </aside>
 
-        <p className="text-slate-600 text-xs">© 2025 Runcademic. All rights reserved.</p>
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-[#F5F6FA]">
-        <div className="login-panel w-full max-w-md">
-
-          {step === 'role' ? (
-            <>
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-                <p className="text-gray-500 text-sm mt-1">Select your role to continue</p>
+      <main className="login-main">
+        <div className="login-card">
+          {step === 1 && (
+            <div>
+              <div className="login-step-tag">Step 01 / 02 · Choose your role</div>
+              <h3>Welcome back.</h3>
+              <p className="sub">Sign in to the portal that matches your role on campus.</p>
+              {ROLES.map((r) => (
+                <button key={r.key} className="role-card" onClick={() => pickRole(r.key)}>
+                  <div className="role-ic">{r.icon}</div>
+                  <div>
+                    <div className="role-name">{r.name}</div>
+                    <div className="role-desc">{r.desc}</div>
+                  </div>
+                  <span className="role-arr">{I.arrowRight(18)}</span>
+                </button>
+              ))}
+              <div className="demo-box" style={{ marginTop: 20 }}>
+                <strong>Demo environment</strong> — credentials prefill on selection.
               </div>
+            </div>
+          )}
 
-              <div className="space-y-3">
-                {ROLES.map((r) => {
-                  const Icon = r.icon;
-                  return (
-                    <button
-                      key={r.key}
-                      onClick={() => handleSelectRole(r.key)}
-                      className="role-btn btn-press w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200 hover:border-[#E05F6B] hover:shadow-md transition-all duration-200 group text-left"
-                    >
-                      <div className="w-11 h-11 rounded-xl bg-gray-50 group-hover:bg-[#E05F6B]/10 flex items-center justify-center transition-colors shrink-0">
-                        <Icon size={20} className="text-slate-600 group-hover:text-[#E05F6B]" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-900">{r.label}</p>
-                        <p className="text-xs text-gray-400">{r.desc}</p>
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 group-hover:text-[#E05F6B] transition-colors" />
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            <>
+          {step === 2 && (
+            <form onSubmit={submit}>
               <button
-                onClick={() => { setStep('role'); setError(''); }}
-                className="btn-press flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 mb-8 transition-colors"
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ marginBottom: 16, paddingLeft: 0 }}
+                onClick={() => { setStep(1); setErr(''); }}
               >
-                <ChevronLeft size={16} />
-                Back
+                {I.arrowLeft(14)} Back to roles
+              </button>
+              <div className="login-step-tag">Step 02 / 02 · Credentials · {ROLE_LABEL[role]}</div>
+              <h3>Sign in</h3>
+              <p className="sub">Demo values are prefilled — just press Sign in.</p>
+
+              <div className="field" style={{ marginBottom: 14 }}>
+                <label>Email</label>
+                <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" />
+              </div>
+              <div className="field" style={{ marginBottom: 8 }}>
+                <label>Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    className="input"
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{ paddingRight: 40 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw((s) => !s)}
+                    style={{ position: 'absolute', right: 10, top: 8, color: 'var(--ink-3)', padding: 4 }}
+                    aria-label={showPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showPw ? I.eyeOff(16) : I.eye(16)}
+                  </button>
+                </div>
+              </div>
+
+              {err && (
+                <div className="alert" data-tone="error" style={{ marginTop: 12 }}>
+                  <span className="ic">{I.alert(16)}</span>
+                  <span>{err}</span>
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-accent" style={{ marginTop: 16, width: '100%' }} disabled={busy}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  {busy ? 'Signing in…' : 'Sign in'}
+                  {!busy && I.arrowRight(14)}
+                </span>
               </button>
 
-              <div className="mb-8 flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[#E05F6B]/10 flex items-center justify-center">
-                  <SelectedRoleIcon size={20} className="text-[#E05F6B]" />
+              <div className="demo-box">
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <strong>Demo credentials</strong>
+                  <span className="fine">read-only</span>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Sign in</h2>
-                  <p className="text-gray-400 text-sm capitalize">{selectedRole} account</p>
+                <div className="creds">
+                  <div className="row"><span style={{ color: 'var(--ink-4)' }}>email</span><span>{DEMO[role]?.email}</span></div>
+                  <div className="row"><span style={{ color: 'var(--ink-4)' }}>pass</span><span>{DEMO[role]?.password}</span></div>
                 </div>
               </div>
-
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email address</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
-                    placeholder="you@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPass ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 pr-11 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPass(!showPass)}
-                      className="btn-press absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
-                    <AlertCircle size={16} className="shrink-0" />
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-press w-full py-3 text-sm font-semibold text-white bg-[#E05F6B] hover:bg-[#d4515d] rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md mt-2"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 size={16} className="animate-spin" />
-                      Signing in...
-                    </span>
-                  ) : 'Sign in'}
-                </button>
-
-                <p className="text-sm text-gray-500 text-center">
-                  Don&apos;t have an account?{' '}
-                  <Link to="/register" className="text-[#E05F6B] font-semibold hover:underline">Sign up</Link>
-                </p>
-
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <p className="text-xs text-gray-400 font-medium mb-1">Demo credentials (pre-filled)</p>
-                  <p className="text-xs text-gray-500">{DEMO[selectedRole]?.email}</p>
-                </div>
-              </form>
-            </>
+            </form>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -1,7 +1,21 @@
-import Layout from '../../components/Layout';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Layout from '../../components/Layout';
+import Badge from '../../components/Badge';
+import I from '../../components/Icon';
 import { api } from '../../services/api';
+
+const DEPT_LABELS = {
+  general: 'General', it: 'IT Support', admin: 'Administration', finance: 'Finance',
+  library: 'Library', registrar: 'Registrar', academic: 'Academic Affairs',
+};
+
+function fmtDate(str) {
+  if (!str || str === '-') return '—';
+  const d = new Date(str);
+  if (Number.isNaN(d.getTime())) return str;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 export default function AssignedTickets() {
   const navigate = useNavigate();
@@ -10,125 +24,116 @@ export default function AssignedTickets() {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    const fetchAssignedTickets = async () => {
+    const run = async () => {
       setLoading(true);
       setErrorMessage('');
       try {
         const currentUser = JSON.parse(localStorage.getItem('runcademic_user') || '{}');
         const response = await api.tickets.list();
         const data = response.data?.data || response.data || [];
-
         const assigned = data
-          .filter((ticket) => Number(ticket.assigned_to) === Number(currentUser.id))
-          .map((ticket) => ({
-            id: ticket.id,
-            title: ticket.title,
-            status: ticket.status || 'open',
-            priority: ticket.priority || 'medium',
-            department: ticket.category || 'general',
-            created: ticket.created || ticket.created_at || '-',
+          .filter((t) => Number(t.assigned_to) === Number(currentUser.id))
+          .map((t) => ({
+            id: t.id, title: t.title,
+            status: t.status || 'open',
+            priority: t.priority || 'medium',
+            department: t.category || 'general',
+            created: t.created || t.created_at || '-',
           }));
-
         setTickets(assigned);
-      } catch (error) {
-        setErrorMessage(error.response?.data?.message || 'Failed to load assigned tickets.');
+      } catch (e) {
+        setErrorMessage(e.response?.data?.message || 'Failed to load assigned tickets.');
       } finally {
         setLoading(false);
       }
     };
-
-    fetchAssignedTickets();
+    run();
   }, []);
 
-  const handleStatusChange = async (ticketId, status) => {
+  const handleStatusChange = async (id, status) => {
     try {
-      await api.tickets.update(ticketId, { status });
-      setTickets((prevTickets) => prevTickets.map((ticket) => (
-        ticket.id === ticketId ? { ...ticket, status } : ticket
-      )));
-    } catch (error) {
-      setErrorMessage(error.response?.data?.message || 'Failed to update ticket status.');
+      await api.tickets.update(id, { status });
+      setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
+    } catch (e) {
+      setErrorMessage(e.response?.data?.message || 'Failed to update ticket status.');
     }
   };
 
-  const handleRowClick = (event, ticketId) => {
-    if (event.target.closest('select') || event.target.closest('a') || event.target.closest('button')) {
-      return;
-    }
-    navigate(`/instructor/tickets/${ticketId}`);
+  const handleRowClick = (e, id) => {
+    if (e.target.closest('select') || e.target.closest('a') || e.target.closest('button')) return;
+    navigate(`/instructor/tickets/${id}`);
   };
 
   return (
     <Layout role="instructor">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Assigned Tickets</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage student requests and update ticket progress.</p>
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Instructor portal · Queue</div>
+            <h1>Assigned tickets.</h1>
+            <p className="sub">Update status inline or open a ticket for full triage.</p>
+          </div>
         </div>
 
         {errorMessage && (
-          <div className="bg-red-50 border border-red-100 rounded-2xl text-red-600 px-4 py-3 text-sm">
-            {errorMessage}
+          <div className="alert" data-tone="error" style={{ marginBottom: 16 }}>
+            <span className="ic">{I.alert(16)}</span><span>{errorMessage}</span>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="card" style={{ overflow: 'hidden' }}>
           {loading ? (
-            <div className="p-12 text-center text-gray-500">Loading assigned tickets...</div>
+            <div className="empty"><p>Loading assigned tickets…</p></div>
           ) : tickets.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">No assigned tickets found.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">ID</th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Title</th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Department</th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Priority</th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Details</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {tickets.map((ticket) => (
-                    <tr
-                      key={ticket.id}
-                      onClick={(event) => handleRowClick(event, ticket.id)}
-                      className="cursor-pointer hover:bg-gray-50/60 transition-colors"
-                    >
-                      <td className="px-5 py-4 text-sm text-gray-600">#{ticket.id}</td>
-                      <td className="px-5 py-4 text-sm font-semibold text-gray-800">{ticket.title}</td>
-                      <td className="px-5 py-4 text-sm text-gray-600 capitalize">{ticket.department}</td>
-                      <td className="px-5 py-4 text-sm text-gray-600 capitalize">{ticket.priority}</td>
-                      <td className="px-5 py-4">
-                        <select
-                          value={(ticket.status || '').toLowerCase()}
-                          onChange={(event) => handleStatusChange(ticket.id, event.target.value)}
-                          className="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] focus:bg-white transition-all"
-                        >
-                          <option value="open">Open</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="waiting">Waiting</option>
-                          <option value="resolved">Resolved</option>
-                          <option value="closed">Closed</option>
-                        </select>
-                      </td>
-                      <td className="px-5 py-4 text-sm text-gray-500">{ticket.created}</td>
-                      <td className="px-5 py-4">
-                        <Link
-                          to={`/instructor/tickets/${ticket.id}`}
-                          className="text-sm font-semibold text-[#E05F6B] hover:underline"
-                        >
-                          View Details →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="empty">
+              <div className="glyph">¶</div>
+              <h4>Queue is clear</h4>
+              <p>No tickets are currently assigned to you.</p>
             </div>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ width: 90 }}>ID</th>
+                  <th>Title</th>
+                  <th style={{ width: 160 }}>Department</th>
+                  <th style={{ width: 110 }}>Priority</th>
+                  <th style={{ width: 180 }}>Status</th>
+                  <th style={{ width: 100 }}>Created</th>
+                  <th style={{ width: 100 }}>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tickets.map((t) => (
+                  <tr key={t.id} onClick={(e) => handleRowClick(e, t.id)} style={{ cursor: 'pointer' }}>
+                    <td className="id">#{t.id}</td>
+                    <td className="title">{t.title}</td>
+                    <td>{DEPT_LABELS[t.department] || t.department}</td>
+                    <td><span className="pri" data-pri={t.priority}>{t.priority}</span></td>
+                    <td>
+                      <select
+                        className="input"
+                        style={{ padding: '6px 10px', fontSize: 13 }}
+                        value={(t.status || '').toLowerCase()}
+                        onChange={(e) => handleStatusChange(t.id, e.target.value)}
+                      >
+                        <option value="open">Open</option>
+                        <option value="in_progress">In progress</option>
+                        <option value="waiting">Waiting</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </td>
+                    <td className="date">{fmtDate(t.created)}</td>
+                    <td>
+                      <Link to={`/instructor/tickets/${t.id}`} className="btn btn-ghost btn-sm" style={{ padding: '0 8px' }}>
+                        View {I.arrowRight(12)}
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       </div>
