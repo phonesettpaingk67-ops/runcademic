@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
@@ -11,6 +12,7 @@ import {
   BarChart3,
   LogOut,
 } from 'lucide-react';
+import { animateSidebar, animateList } from '../utils/animations';
 
 const roleMenus = {
   student: [
@@ -56,6 +58,11 @@ export default function Sidebar({ role }) {
     navigate('/login');
   };
 
+  useEffect(() => {
+    animateSidebar('aside');
+    animateList('.nav-item');
+  }, []);
+
   return (
     <aside className="w-60 min-h-screen bg-[#141C27] flex flex-col fixed left-0 top-0 z-30">
       {/* Logo */}
@@ -79,7 +86,7 @@ export default function Sidebar({ role }) {
               to={item.path}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                `nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                   isActive
                     ? 'bg-[#E05F6B] text-white shadow-sm'
                     : 'text-slate-400 hover:bg-white/5 hover:text-white'

@@ -17,7 +17,7 @@ export default function StatCard({ icon, label, value, color = 'blue', trend }) 
   const Icon = isComponentIcon ? icon : null;
 
   return (
-    <div className={`bg-white rounded-2xl border ${c.border} p-5 flex items-center gap-4 hover:shadow-md transition-shadow duration-200`}>
+    <div className={`hover-lift bg-white rounded-2xl border ${c.border} p-5 flex items-center gap-4 hover:shadow-md transition-shadow duration-200`}>
       <div className={`w-12 h-12 rounded-xl ${c.icon} flex items-center justify-center shrink-0`}>
         {Icon ? (
           <Icon size={20} className={c.text} />

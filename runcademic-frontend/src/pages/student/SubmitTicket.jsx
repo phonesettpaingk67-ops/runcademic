@@ -98,11 +98,11 @@ export default function SubmitTicket() {
 
             <div className="flex gap-3 pt-2">
               <button type="submit" disabled={submitting}
-                className="flex-1 py-3 text-sm font-semibold text-white bg-[#E05F6B] hover:bg-[#d4515d] rounded-xl transition-all disabled:opacity-50 shadow-sm hover:shadow-md">
+                className="btn-press flex-1 py-3 text-sm font-semibold text-white bg-[#E05F6B] hover:bg-[#d4515d] rounded-xl transition-all disabled:opacity-50 shadow-sm hover:shadow-md">
                 {submitting ? 'Submitting...' : 'Submit Ticket'}
               </button>
               <button type="button" onClick={() => navigate('/student/tickets')}
-                className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all">
+                className="btn-press flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all">
                 View My Tickets
               </button>
             </div>

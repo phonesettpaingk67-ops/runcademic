@@ -15,6 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { api } from '../services/api';
+import { animateLogin, animateList } from '../utils/animations';
 
 const ROLES = [
   { key: 'student',    label: 'Student',    desc: 'Access courses & submit tickets', icon: GraduationCap },
@@ -62,6 +63,16 @@ export default function Login() {
       localStorage.removeItem('access_token');
     }
   }, [navigate]);
+
+  useEffect(() => {
+    animateLogin('.login-panel');
+  }, []);
+
+  useEffect(() => {
+    if (step === 'role') {
+      animateList('.role-btn');
+    }
+  }, [step]);
 
   const handleSelectRole = (role) => {
     setSelectedRole(role);
@@ -142,7 +153,7 @@ export default function Login() {
 
       {/* Right panel */}
       <div className="flex-1 flex items-center justify-center p-8 bg-[#F5F6FA]">
-        <div className="w-full max-w-md">
+        <div className="login-panel w-full max-w-md">
 
           {step === 'role' ? (
             <>
@@ -158,7 +169,7 @@ export default function Login() {
                     <button
                       key={r.key}
                       onClick={() => handleSelectRole(r.key)}
-                      className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200 hover:border-[#E05F6B] hover:shadow-md transition-all duration-200 group text-left"
+                      className="role-btn btn-press w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200 hover:border-[#E05F6B] hover:shadow-md transition-all duration-200 group text-left"
                     >
                       <div className="w-11 h-11 rounded-xl bg-gray-50 group-hover:bg-[#E05F6B]/10 flex items-center justify-center transition-colors shrink-0">
                         <Icon size={20} className="text-slate-600 group-hover:text-[#E05F6B]" />
@@ -177,7 +188,7 @@ export default function Login() {
             <>
               <button
                 onClick={() => { setStep('role'); setError(''); }}
-                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 mb-8 transition-colors"
+                className="btn-press flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 mb-8 transition-colors"
               >
                 <ChevronLeft size={16} />
                 Back
@@ -218,7 +229,7 @@ export default function Login() {
                     <button
                       type="button"
                       onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="btn-press absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -235,7 +246,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 text-sm font-semibold text-white bg-[#E05F6B] hover:bg-[#d4515d] rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md mt-2"
+                  className="btn-press w-full py-3 text-sm font-semibold text-white bg-[#E05F6B] hover:bg-[#d4515d] rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md mt-2"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">

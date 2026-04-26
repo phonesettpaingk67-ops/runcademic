@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Ticket,
@@ -12,10 +12,12 @@ import Layout from '../../components/Layout';
 import StatCard from '../../components/StatCard';
 import Badge from '../../components/Badge';
 import { api } from '../../services/api';
+import { animateCards, animateList, animatePageEnter } from '../../utils/animations';
 
 export default function StudentDashboard() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const pageRef = useRef(null);
   const user = JSON.parse(localStorage.getItem('runcademic_user') || '{}');
 
   useEffect(() => {
@@ -37,6 +39,17 @@ export default function StudentDashboard() {
       .finally(() => setLoading(false));
   }, [user.id]);
 
+  useEffect(() => {
+    animatePageEnter('.page-content');
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      animateCards('.stat-card');
+      animateList('.ticket-row');
+    }
+  }, [loading, tickets.length]);
+
   const recent = tickets.slice(0, 5);
   const open = tickets.filter(t => t.status === 'open').length;
   const inProgress = tickets.filter(t => t.status === 'in_progress').length;
@@ -44,6 +57,7 @@ export default function StudentDashboard() {
 
   return (
     <Layout role="student">
+      <div ref={pageRef} className="page-content">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Good {getGreeting()}, {firstName(user.name)}!</h1>
@@ -51,12 +65,21 @@ export default function StudentDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Ticket} label="Total Tickets" value={loading ? '—' : tickets.length} color="blue" />
-        <StatCard icon={Clock3} label="Open" value={loading ? '—' : open} color="coral" />
-        <StatCard icon={RefreshCw} label="In Progress" value={loading ? '—' : inProgress} color="yellow" />
-        <StatCard icon={CheckCircle2} label="Resolved" value={loading ? '—' : resolved} color="green" />
-      </div>
+      {loading && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="skeleton h-24 w-full" />
+          ))}
+        </div>
+      )}
+      {!loading && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="stat-card"><StatCard icon={Ticket} label="Total Tickets" value={tickets.length} color="blue" /></div>
+          <div className="stat-card"><StatCard icon={Clock3} label="Open" value={open} color="coral" /></div>
+          <div className="stat-card"><StatCard icon={RefreshCw} label="In Progress" value={inProgress} color="yellow" /></div>
+          <div className="stat-card"><StatCard icon={CheckCircle2} label="Resolved" value={resolved} color="green" /></div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Tickets */}
@@ -67,7 +90,9 @@ export default function StudentDashboard() {
           </div>
           <div className="divide-y divide-gray-50">
             {loading ? (
-              <div className="px-6 py-10 text-center text-gray-400 text-sm">Loading...</div>
+              <div className="px-6 py-6 space-y-3">
+                {[1, 2, 3].map(i => <div key={i} className="skeleton h-12 w-full" />)}
+              </div>
             ) : recent.length === 0 ? (
               <div className="px-6 py-10 text-center">
                 <p className="text-gray-400 text-sm mb-3">No tickets submitted yet.</p>
@@ -76,7 +101,7 @@ export default function StudentDashboard() {
                 </Link>
               </div>
             ) : recent.map(t => (
-              <div key={t.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50/50 transition-colors">
+              <div key={t.id} className="ticket-row flex items-center justify-between px-6 py-4 hover:bg-gray-50/50 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                     <span className="text-xs font-bold text-gray-500">#{t.id}</span>
@@ -151,6 +176,7 @@ export default function StudentDashboard() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </Layout>
   );

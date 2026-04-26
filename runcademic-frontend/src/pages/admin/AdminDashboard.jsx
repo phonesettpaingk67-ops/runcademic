@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Ticket,
@@ -13,6 +13,7 @@ import Layout from '../../components/Layout';
 import StatCard from '../../components/StatCard';
 import Badge from '../../components/Badge';
 import { api } from '../../services/api';
+import { animateCards, animateList, animatePageEnter } from '../../utils/animations';
 
 const DEPARTMENTS = ['general','it','admin','finance','library','registrar','academic'];
 
@@ -21,6 +22,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [usersById, setUsersById] = useState({});
   const [loading, setLoading] = useState(true);
+  const pageRef = useRef(null);
 
   useEffect(() => {
     Promise.all([api.tickets.list(), api.users.list()])
@@ -38,6 +40,17 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    animatePageEnter('.page-content');
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      animateCards('.stat-card');
+      animateList('.ticket-row');
+    }
+  }, [loading, tickets.length]);
+
   const open = tickets.filter(t => t.status === 'open').length;
   const inProgress = tickets.filter(t => t.status === 'in_progress').length;
   const resolved = tickets.filter(t => ['resolved','closed'].includes(t.status)).length;
@@ -53,18 +66,28 @@ export default function AdminDashboard() {
 
   return (
     <Layout role="admin">
+      <div ref={pageRef} className="page-content">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-500 text-sm mt-1">Real-time overview of your system.</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Ticket} label="Total Tickets" value={loading ? '—' : tickets.length} color="blue" />
-        <StatCard icon={AlertTriangle} label="Open" value={loading ? '—' : open} color="red" />
-        <StatCard icon={RefreshCw} label="In Progress" value={loading ? '—' : inProgress} color="yellow" />
-        <StatCard icon={Users} label="Total Users" value={loading ? '—' : users.length} color="green" />
-      </div>
+      {loading && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="skeleton h-24 w-full" />
+          ))}
+        </div>
+      )}
+      {!loading && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="stat-card"><StatCard icon={Ticket} label="Total Tickets" value={tickets.length} color="blue" /></div>
+          <div className="stat-card"><StatCard icon={AlertTriangle} label="Open" value={open} color="red" /></div>
+          <div className="stat-card"><StatCard icon={RefreshCw} label="In Progress" value={inProgress} color="yellow" /></div>
+          <div className="stat-card"><StatCard icon={Users} label="Total Users" value={users.length} color="green" /></div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Tickets Table */}
@@ -74,13 +97,15 @@ export default function AdminDashboard() {
             <Link to="/admin/tickets" className="text-xs text-[#E05F6B] font-semibold hover:underline">View all</Link>
           </div>
           {loading ? (
-            <div className="px-6 py-10 text-center text-gray-400 text-sm">Loading...</div>
+            <div className="px-6 py-6 space-y-3">
+              {[1, 2, 3].map(i => <div key={i} className="skeleton h-12 w-full" />)}
+            </div>
           ) : recent.length === 0 ? (
             <div className="px-6 py-10 text-center text-gray-400 text-sm">No tickets yet.</div>
           ) : (
             <div className="divide-y divide-gray-50">
               {recent.map(t => (
-                <div key={t.id} className="flex items-center justify-between px-6 py-3.5 hover:bg-gray-50/50 transition-colors">
+                <div key={t.id} className="ticket-row flex items-center justify-between px-6 py-3.5 hover:bg-gray-50/50 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                       <span className="text-[10px] font-bold text-gray-500">#{t.id}</span>
@@ -147,6 +172,7 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </Layout>
   );
