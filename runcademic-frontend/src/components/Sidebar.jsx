@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home,
   Plus,
@@ -11,6 +11,7 @@ import {
   Building2,
   BarChart3,
   LogOut,
+  X,
 } from 'lucide-react';
 import { animateSidebar, animateList } from '../utils/animations';
 
@@ -45,8 +46,9 @@ const roleLabels = {
   admin: 'Admin Portal',
 };
 
-export default function Sidebar({ role }) {
+export default function Sidebar({ role, isOpen = false, onClose = () => {} }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const items = roleMenus[role] || [];
   const user = JSON.parse(localStorage.getItem('runcademic_user') || '{}');
   const initials = (user.name || user.email || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -55,6 +57,7 @@ export default function Sidebar({ role }) {
     localStorage.removeItem('runcademic_user');
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
+    onClose();
     navigate('/login');
   };
 
@@ -63,15 +66,29 @@ export default function Sidebar({ role }) {
     animateList('.nav-item');
   }, []);
 
+  useEffect(() => {
+    onClose();
+  }, [location.pathname, onClose]);
+
   return (
-    <aside className="w-60 min-h-screen bg-[#141C27] flex flex-col fixed left-0 top-0 z-30">
+    <aside className={`w-60 min-h-screen bg-[#141C27] flex flex-col fixed left-0 top-0 z-40 transform transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/5">
-        <img
-          src="/runcademic-home-logo.png"
-          alt="Runcademic logo"
-          className="w-40 h-auto object-contain"
-        />
+        <div className="flex items-start justify-between gap-3">
+          <img
+            src="/runcademic-home-logo.png"
+            alt="Runcademic logo"
+            className="w-36 h-auto object-contain"
+          />
+          <button
+            type="button"
+            onClick={onClose}
+            className="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:bg-white/5 hover:text-white"
+            aria-label="Close menu"
+          >
+            <X size={16} />
+          </button>
+        </div>
         <p className="text-slate-500 text-[10px] font-medium mt-2">{roleLabels[role] || 'Portal'}</p>
       </div>
 
@@ -92,6 +109,7 @@ export default function Sidebar({ role }) {
                     : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 }`
               }
+              onClick={onClose}
             >
               <Icon size={16} />
               <span>{item.label}</span>
