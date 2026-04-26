@@ -14,6 +14,7 @@ export default function AllTickets() {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [viewLoading, setViewLoading] = useState(false);
   const [viewTicket, setViewTicket] = useState(null);
+  const [viewComments, setViewComments] = useState([]);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -162,7 +163,10 @@ export default function AllTickets() {
     setErrorMessage('');
 
     try {
-      const response = await api.tickets.getById(ticketId);
+      const [response, commentsRes] = await Promise.all([
+        api.tickets.getById(ticketId),
+        api.comments.list(ticketId),
+      ]);
       const raw = response.data?.data || response.data || {};
       setViewTicket({
         id: raw.id,
@@ -175,9 +179,11 @@ export default function AllTickets() {
         assignedTo: raw.assigned_to || null,
         createdAt: raw.created_at || raw.created || null,
       });
+      setViewComments(commentsRes.data?.data || commentsRes.data || []);
     } catch (error) {
       setErrorMessage(error.response?.data?.message || 'Failed to load ticket details.');
       setViewTicket(null);
+      setViewComments([]);
     } finally {
       setViewLoading(false);
     }
@@ -186,6 +192,7 @@ export default function AllTickets() {
   const closeViewModal = () => {
     setIsViewOpen(false);
     setViewTicket(null);
+    setViewComments([]);
   };
 
   const openEditModal = (ticket) => {
@@ -479,6 +486,25 @@ export default function AllTickets() {
                         <p className="text-gray-400 text-xs uppercase tracking-wider">Created</p>
                         <p className="text-gray-900 font-medium mt-1">{formatDateTime(viewTicket.createdAt)}</p>
                       </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Comments ({viewComments.length})</p>
+                      {viewComments.length === 0 ? (
+                        <p className="text-gray-500">No comments yet.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {viewComments.map((comment) => (
+                            <div key={comment.id} className="rounded-xl border border-gray-100 bg-gray-50/80 p-3">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-gray-900 font-medium">{comment.author_name || 'Staff'}</p>
+                                <p className="text-xs text-gray-500">{formatDateTime(comment.created_at)}</p>
+                              </div>
+                              <p className="text-gray-700 mt-1 whitespace-pre-wrap">{comment.comment_text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
