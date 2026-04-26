@@ -63,12 +63,6 @@ async function seedDemoUsers(externalPool = null) {
         name: 'Demo Admin',
         role: 'admin',
         password: 'admin123'
-      },
-      {
-        email: 'user@runcademic.com',
-        name: 'Demo User',
-        role: 'user',
-        password: 'user123'
       }
     ];
 
@@ -130,10 +124,6 @@ async function seedDemoUsers(externalPool = null) {
     console.log('🔑 Admin Account:');
     console.log('   Email: admin@runcademic.com');
     console.log('   Password: admin123\n');
-    
-    console.log('👤 User Account:');
-    console.log('   Email: user@runcademic.com');
-    console.log('   Password: user123\n');
     
     console.log('='.repeat(60));
     console.log('🔗 Login at: http://localhost:5176/login');
