@@ -1,4 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
-	<polygon points="20,30 152,128 20,226" fill="#E1637D" />
-	<polygon points="236,30 104,128 236,226" fill="#6695BE" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <style>
+    path { fill: #b85d24; }
+    @media (prefers-color-scheme: dark) {
+      path { fill: #efe9d8; }
+    }
+  </style>
+  <path d="M20 30 L152 128 L20 226 Z M236 30 L104 128 L236 226 Z" fill-rule="evenodd" />
 </svg>

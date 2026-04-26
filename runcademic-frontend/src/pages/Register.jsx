@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import I from '../components/Icon';
+import Logo from '../components/Logo';
 
 const ROLES = [
   { key: 'student',    name: 'Student',       desc: 'Submit tickets, browse schedules, track requests.', icon: I.capStudent(22) },
@@ -75,7 +76,7 @@ export default function Register() {
     <div className="login-shell">
       <aside className="login-aside">
         <div className="login-mark-row">
-          <span className="em" style={{ fontSize: 28 }}>R</span>
+          <Logo size={28} />
           <span>Runcademic</span>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.14em', marginLeft: 'auto' }}>EST. 2026 · v4.0</span>
         </div>

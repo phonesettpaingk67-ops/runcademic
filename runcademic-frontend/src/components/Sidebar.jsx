@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import I from './Icon';
+import Logo from './Logo';
 
 const roleMenus = {
   student: [
@@ -55,7 +56,7 @@ export default function Sidebar({ role, isOpen = false, onClose = () => {} }) {
   return (
     <aside className="rail" data-mobile-open={isOpen ? 'true' : 'false'}>
       <div className="rail-brand">
-        <div className="rail-mark">R</div>
+        <div className="rail-mark"><Logo size={20} /></div>
         <div className="rail-name">Runcademic</div>
       </div>
       <div className="rail-section">
