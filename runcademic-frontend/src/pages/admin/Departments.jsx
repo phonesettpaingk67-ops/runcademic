@@ -1,36 +1,32 @@
 import { useEffect, useState } from 'react';
-import {
-  Building2,
-  Laptop2,
-  Landmark,
-  Wallet,
-  Library,
-  ClipboardList,
-  GraduationCap,
-} from 'lucide-react';
 import Layout from '../../components/Layout';
+import I from '../../components/Icon';
 import { api } from '../../services/api';
 
 const DEPARTMENT_LIST = [
-  { key: 'general', name: 'General', icon: Building2 },
-  { key: 'it', name: 'IT Support', icon: Laptop2 },
-  { key: 'admin', name: 'Administration', icon: Landmark },
-  { key: 'finance', name: 'Finance', icon: Wallet },
-  { key: 'library', name: 'Library', icon: Library },
-  { key: 'registrar', name: 'Registrar', icon: ClipboardList },
-  { key: 'academic', name: 'Academic Affairs', icon: GraduationCap },
+  { key: 'general',   name: 'General',          glyph: '¶' },
+  { key: 'it',        name: 'IT Support',       glyph: '⌘' },
+  { key: 'admin',     name: 'Administration',   glyph: '§' },
+  { key: 'finance',   name: 'Finance',          glyph: '$' },
+  { key: 'library',   name: 'Library',          glyph: '℞' },
+  { key: 'registrar', name: 'Registrar',        glyph: '✎' },
+  { key: 'academic',  name: 'Academic Affairs', glyph: '𝒜' },
 ];
 
 export default function Departments() {
   const [ticketsByDept, setTicketsByDept] = useState({});
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const [info, setInfo] = useState('');
+
+  const flashInfo = (msg) => {
+    setInfo(msg);
+    setTimeout(() => setInfo(''), 2500);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await api.tickets.list();
+    api.tickets
+      .list()
+      .then((res) => {
         const tickets = res.data?.data || res.data || [];
         const counts = {};
         tickets.forEach((t) => {
@@ -38,81 +34,72 @@ export default function Departments() {
           counts[d] = (counts[d] || 0) + 1;
         });
         setTicketsByDept(counts);
-      } catch {
-        setTicketsByDept({});
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+      })
+      .catch(() => setTicketsByDept({}))
+      .finally(() => setLoading(false));
   }, []);
 
   const totalTickets = Object.values(ticketsByDept).reduce((a, b) => a + b, 0);
 
   return (
     <Layout role="admin">
-      <div className="space-y-6">
-        {message && (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-700 px-4 py-3 text-sm">
-            {message}
-          </div>
-        )}
-
-        <div className="flex flex-wrap justify-between items-start gap-4">
+      <div className="page">
+        <div className="page-head">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Departments</h1>
-            <p className="text-gray-500 text-sm mt-1">University departments with real-time ticket activity.</p>
+            <div className="eyebrow">Administrator</div>
+            <h1>
+              <span className="serif italic" style={{ color: 'var(--accent)' }}>Departments</span>.
+            </h1>
+            <p className="sub">Seven channels, one routing system.</p>
           </div>
-          <button
-            onClick={() => setMessage('Feature coming soon.')}
-            className="px-4 py-2.5 text-sm font-semibold text-white bg-[#E05F6B] hover:bg-[#d4515d] rounded-xl transition-all shadow-sm"
-          >
-            + Add Department
+          <button className="btn btn-accent" onClick={() => flashInfo('Add-department feature coming soon.')}>
+            {I.plus(14)} Add department
           </button>
         </div>
 
-        {loading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-500">
-            Loading departments...
+        {info && (
+          <div className="alert" data-tone="success" style={{ marginBottom: 14 }}>
+            <span className="ic">{I.check(16)}</span><span>{info}</span>
           </div>
+        )}
+
+        {loading ? (
+          <div className="card card-pad"><p className="muted">Loading departments…</p></div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {DEPARTMENT_LIST.map((dept) => {
-              const Icon = dept.icon;
-              const count = ticketsByDept[dept.key] || 0;
-              const pct = totalTickets ? Math.round((count / totalTickets) * 100) : 0;
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {DEPARTMENT_LIST.map((d) => {
+              const c = ticketsByDept[d.key] || 0;
+              const pct = totalTickets ? Math.round((c / totalTickets) * 100) : 0;
               return (
-                <div key={dept.key} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#E05F6B]/10 flex items-center justify-center">
-                      <Icon size={20} className="text-[#E05F6B]" />
+                <div key={d.key} className="card card-pad" style={{ padding: 22 }}>
+                  <div className="row gap-3" style={{ marginBottom: 14 }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 6,
+                      background: 'var(--accent-soft)',
+                      display: 'grid', placeItems: 'center',
+                      fontFamily: 'var(--serif)', fontStyle: 'italic',
+                      fontSize: 24, color: 'var(--accent-ink)', fontWeight: 600,
+                    }}>
+                      {d.glyph}
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">{dept.name}</h3>
+                    <div style={{ flex: 1 }}>
+                      <div className="serif" style={{ fontSize: 17, fontWeight: 500 }}>{d.name}</div>
+                      <div className="fine mono">{d.key}</div>
+                    </div>
                   </div>
-
-                  <div className="space-y-2 mb-5">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Total Tickets</span>
-                      <span className="font-semibold text-gray-800">{count}</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className="h-2 rounded-full bg-[#E05F6B]" style={{ width: `${pct}%` }} />
-                    </div>
-                    <p className="text-xs text-gray-400">{pct}% of all tickets</p>
+                  <div className="row" style={{ justifyContent: 'space-between', marginBottom: 6, fontSize: 12 }}>
+                    <span className="muted">Tickets</span>
+                    <span className="mono">
+                      <strong style={{ color: 'var(--ink)' }}>{c}</strong> · {pct}%
+                    </span>
                   </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setMessage('Feature coming soon.')}
-                      className="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
-                    >
-                      Edit
+                  <div className="bar"><span style={{ width: `${pct}%` }} /></div>
+                  <div className="row gap-2" style={{ paddingTop: 16, marginTop: 16, borderTop: '1px solid var(--rule-soft)' }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => flashInfo('Edit feature coming soon.')}>
+                      {I.edit(13)} Edit
                     </button>
-                    <button
-                      onClick={() => setMessage('Feature coming soon.')}
-                      className="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
-                    >
-                      Delete
+                    <button className="btn btn-ghost btn-sm" onClick={() => flashInfo('Delete feature coming soon.')}>
+                      {I.trash(13)} Delete
                     </button>
                   </div>
                 </div>

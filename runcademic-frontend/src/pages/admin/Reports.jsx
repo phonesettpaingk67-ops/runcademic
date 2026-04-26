@@ -1,16 +1,30 @@
 import { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
+import I from '../../components/Icon';
 import { api } from '../../services/api';
 
-const STATUS_COLORS = {
-  open: 'bg-blue-500',
-  in_progress: 'bg-yellow-500',
-  waiting: 'bg-orange-400',
-  resolved: 'bg-green-500',
-  closed: 'bg-gray-500',
+const STATUS_LABEL = {
+  open:        'Open',
+  in_progress: 'In progress',
+  waiting:     'Waiting',
+  resolved:    'Resolved',
+  closed:      'Closed',
 };
 
-const DEPT_COLORS = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-red-500', 'bg-pink-500', 'bg-indigo-500'];
+const DEPT_GLYPH = {
+  general: '¶', it: '⌘', admin: '§', finance: '$',
+  library: '℞', registrar: '✎', academic: '𝒜',
+};
+
+function StatusBar({ status, value, max }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  const cls = status === 'in_progress' ? 's-progress' : `s-${status}`;
+  return (
+    <div className={`bar ${cls}`}>
+      <span style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
 
 export default function Reports() {
   const [tickets, setTickets] = useState([]);
@@ -18,7 +32,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const run = async () => {
       setLoading(true);
       try {
         const [ticketsRes, usersRes] = await Promise.all([
@@ -28,23 +42,23 @@ export default function Reports() {
         setTickets(ticketsRes.data?.data || ticketsRes.data || []);
         setUsers(usersRes.data?.data || usersRes.data || []);
       } catch {
-        setTickets([]);
-        setUsers([]);
+        setTickets([]); setUsers([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    run();
   }, []);
 
-  // Compute stats from real data
   const total = tickets.length;
-  const byStatus = ['open', 'in_progress', 'waiting', 'resolved', 'closed'].map((s) => ({
-    status: s.replace('_', ' '),
-    key: s,
-    count: tickets.filter((t) => (t.status || '').toLowerCase() === s).length,
-    percentage: total ? Math.round((tickets.filter((t) => (t.status || '').toLowerCase() === s).length / total) * 100) : 0,
-  })).filter((s) => s.count > 0);
+  const counts = ['open', 'in_progress', 'waiting', 'resolved', 'closed']
+    .reduce((acc, k) => {
+      acc[k] = tickets.filter((t) => (t.status || '').toLowerCase() === k).length;
+      return acc;
+    }, {});
+  const resolved = counts.resolved + counts.closed;
+  const rate = total ? Math.round((resolved / total) * 100) : 0;
+  const openCount = counts.open;
 
   const deptMap = {};
   tickets.forEach((t) => {
@@ -53,81 +67,107 @@ export default function Reports() {
   });
   const byDept = Object.entries(deptMap).sort((a, b) => b[1] - a[1]);
 
-  const resolved = tickets.filter((t) => ['resolved', 'closed'].includes((t.status || '').toLowerCase())).length;
-  const resolutionRate = total ? Math.round((resolved / total) * 100) : 0;
-  const openCount = tickets.filter((t) => (t.status || '').toLowerCase() === 'open').length;
-
   const roleMap = {};
-  users.forEach((u) => { roleMap[u.role] = (roleMap[u.role] || 0) + 1; });
+  users.forEach((u) => { const r = u.role || 'student'; roleMap[r] = (roleMap[r] || 0) + 1; });
+  const byRole = ['admin', 'instructor', 'student'].map((r) => ({ role: r, count: roleMap[r] || 0 }));
+
+  const kpis = [
+    { label: 'Total tickets',   value: total },
+    { label: 'Open tickets',    value: openCount },
+    { label: 'Resolution rate', value: `${rate}%` },
+    { label: 'Total users',     value: users.length },
+  ];
 
   return (
     <Layout role="admin">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-500 text-sm mt-1">Real-time system analytics.</p>
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Administrator · Analytics</div>
+            <h1>
+              <span className="serif italic" style={{ color: 'var(--accent)' }}>Reports</span>.
+            </h1>
+            <p className="sub">A standing audit of system health, this term.</p>
+          </div>
+          <button className="btn btn-secondary btn-sm">Export PDF</button>
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-500">
-            Loading reports...
-          </div>
+          <div className="card card-pad"><p className="muted">Loading reports…</p></div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-sm text-gray-500">Total Tickets</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{total}</p>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-sm text-gray-500">Open Tickets</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{openCount}</p>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-sm text-gray-500">Resolution Rate</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{resolutionRate}%</p>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <p className="text-sm text-gray-500">Total Users</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{users.length}</p>
-              </div>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1,
+              background: 'var(--rule-soft)', borderRadius: 10, overflow: 'hidden',
+              border: '1px solid var(--rule)', marginBottom: 24,
+            }}>
+              {kpis.map((k) => (
+                <div key={k.label} style={{ background: 'var(--surface)', padding: '22px 24px' }}>
+                  <div className="eyebrow">{k.label}</div>
+                  <div className="serif" style={{ fontSize: 36, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, lineHeight: 1 }}>
+                    {k.value}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-5">Tickets by Status</h2>
-                {byStatus.length === 0 ? (
-                  <p className="text-gray-400 text-center py-8">No ticket data yet.</p>
+            <div className="split-narrow" style={{ marginBottom: 24 }}>
+              <div className="card card-pad">
+                <h3 className="card-title" style={{ fontSize: 18, marginBottom: 18 }}>Tickets by status</h3>
+                {total === 0 ? (
+                  <p className="muted" style={{ textAlign: 'center', padding: '24px 0' }}>No ticket data yet.</p>
                 ) : (
-                  <div className="space-y-4">
-                    {byStatus.map((item) => (
-                      <div key={item.key}>
-                        <div className="flex justify-between mb-1">
-                          <span className="font-medium text-gray-700 capitalize">{item.status}</span>
-                          <span className="text-gray-500 text-sm">{item.count} ({item.percentage}%)</span>
+                  <div className="col gap-3">
+                    {Object.keys(STATUS_LABEL).map((s) => {
+                      const v = counts[s];
+                      const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+                      return (
+                        <div key={s} className="col" style={{ gap: 6 }}>
+                          <div className="row" style={{ justifyContent: 'space-between', fontSize: 12.5 }}>
+                            <span style={{ color: 'var(--ink)' }}>{STATUS_LABEL[s]}</span>
+                            <span className="mono fine">{v} · {pct}%</span>
+                          </div>
+                          <StatusBar status={s} value={v} max={total} />
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-3">
-                          <div className={`h-3 rounded-full ${STATUS_COLORS[item.key] || 'bg-gray-400'}`} style={{ width: `${item.percentage}%` }} />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-5">Tickets by Department</h2>
+              <div className="card card-pad">
+                <h3 className="card-title" style={{ fontSize: 18, marginBottom: 18 }}>Tickets by department</h3>
                 {byDept.length === 0 ? (
-                  <p className="text-gray-400 text-center py-8">No ticket data yet.</p>
+                  <p className="muted" style={{ textAlign: 'center', padding: '24px 0' }}>No ticket data yet.</p>
                 ) : (
-                  <div className="space-y-3">
-                    {byDept.map(([dept, count], idx) => (
-                      <div key={dept} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${DEPT_COLORS[idx % DEPT_COLORS.length]}`} />
-                          <span className="font-medium text-gray-700 capitalize">{dept}</span>
+                  <div className="col">
+                    {byDept.map(([dept, count], i) => (
+                      <div
+                        key={dept}
+                        className="row"
+                        style={{
+                          padding: '10px 0',
+                          borderTop: i === 0 ? 0 : '1px solid var(--rule-soft)',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div className="row gap-3">
+                          <span className="serif italic" style={{ color: 'var(--accent)', width: 20, textAlign: 'center', fontSize: 18 }}>
+                            {DEPT_GLYPH[dept] || '¶'}
+                          </span>
+                          <span style={{ fontSize: 13.5, textTransform: 'capitalize' }}>{dept}</span>
                         </div>
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-semibold text-white bg-[#E05F6B]">{count}</span>
+                        <span
+                          className="mono fine"
+                          style={{
+                            background: 'var(--surface-2)',
+                            padding: '2px 8px',
+                            borderRadius: 4,
+                            color: 'var(--ink-2)',
+                          }}
+                        >
+                          {count}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -135,13 +175,19 @@ export default function Reports() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-5">Users by Role</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(roleMap).map(([role, count]) => (
-                  <div key={role} className="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
-                    <p className="text-2xl font-bold text-gray-900">{count}</p>
-                    <p className="text-gray-500 text-sm capitalize mt-1">{role}s</p>
+            <div className="card card-pad">
+              <h3 className="card-title" style={{ fontSize: 18, marginBottom: 18 }}>Users by role</h3>
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1,
+                background: 'var(--rule-soft)', borderRadius: 8, overflow: 'hidden',
+                border: '1px solid var(--rule)',
+              }}>
+                {byRole.map((r) => (
+                  <div key={r.role} style={{ background: 'var(--surface)', padding: '20px 24px' }}>
+                    <div className="eyebrow" style={{ textTransform: 'capitalize' }}>{r.role}</div>
+                    <div className="serif" style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, lineHeight: 1 }}>
+                      {r.count}
+                    </div>
                   </div>
                 ))}
               </div>

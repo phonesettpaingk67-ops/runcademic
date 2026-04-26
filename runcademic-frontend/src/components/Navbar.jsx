@@ -49,12 +49,7 @@ export default function Navbar({ role, onMenuToggle }) {
         <span className="sep">/</span>
         <span className="here">{pageTitle(pathname)}</span>
       </div>
-      <div className="search">
-        <span style={{ color: 'var(--ink-4)' }}>{I.search(14)}</span>
-        <input placeholder="Search tickets, people, courses…" />
-        <span className="kbd">⌘K</span>
-      </div>
-      <div className="tb-toggle" role="group" aria-label="Theme">
+      <div className="tb-toggle" role="group" aria-label="Theme" style={{ marginLeft: 'auto' }}>
         <button data-on={theme === 'light'} onClick={() => setTheme('light')} aria-label="Light mode" title="Light">
           {I.sun(14)}
         </button>
@@ -62,10 +57,6 @@ export default function Navbar({ role, onMenuToggle }) {
           {I.moon(14)}
         </button>
       </div>
-      <button className="tb-icon" title="Notifications" aria-label="Notifications">
-        {I.bell(16)}
-        <span className="tb-dot" />
-      </button>
     </div>
   );
 }
