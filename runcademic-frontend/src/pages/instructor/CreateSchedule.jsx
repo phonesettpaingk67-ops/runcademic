@@ -1,123 +1,136 @@
 import { useState } from 'react';
-import Layout from '../../components/Layout';
 import { useNavigate } from 'react-router-dom';
+import Layout from '../../components/Layout';
+import I from '../../components/Icon';
+import { api } from '../../services/api';
 
 export default function CreateSchedule() {
   const navigate = useNavigate();
-  const [message, setMessage] = useState('');
-  const [formData, setFormData] = useState({
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
     title: '',
     description: '',
     startTime: '',
     endTime: '',
     location: '',
-    status: 'scheduled',
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setMessage('Schedule created successfully. Redirecting...');
-    navigate('/instructor/schedules');
-  };
+  const update = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); setSuccess('');
+    setSubmitting(true);
+    try {
+      await api.schedules.create({
+        title: form.title.trim(),
+        description: form.description.trim(),
+        start_time: form.startTime,
+        end_time: form.endTime,
+        location: form.location.trim(),
+      });
+      setSuccess(`Saved. "${form.title || 'Event'}" is on the calendar.`);
+      setTimeout(() => navigate('/instructor/schedules'), 800);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create schedule.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <Layout role="instructor">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Create New Schedule</h1>
-          <p className="text-gray-500 text-sm mt-1">Add a new class or event to your schedule.</p>
+      <div className="page" style={{ maxWidth: 760 }}>
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Instructor portal · New event</div>
+            <h1>
+              Create a <span className="serif italic" style={{ color: 'var(--accent)' }}>schedule</span>.
+            </h1>
+            <p className="sub">Add a lecture, office-hours block, or one-off session.</p>
+          </div>
         </div>
 
-        {message && (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-700 px-4 py-3 text-sm">
-            {message}
+        {error && (
+          <div className="alert" data-tone="error" style={{ marginBottom: 14 }}>
+            <span className="ic">{I.alert(16)}</span><span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <div className="alert" data-tone="success" style={{ marginBottom: 20 }}>
+            <span className="ic">{I.check(16)}</span>
+            <span><strong>Saved.</strong> {success}</span>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Event Title</label>
+        <form onSubmit={handleSubmit} className="card card-pad col gap-6">
+          <div className="field">
+            <label>Event title <span className="req">*</span></label>
+            <input
+              className="input"
+              value={form.title}
+              onChange={(e) => update('title', e.target.value)}
+              placeholder="e.g. CS-220 lab session"
+              required
+            />
+          </div>
+
+          <div className="field">
+            <label>Description</label>
+            <textarea
+              className="textarea"
+              value={form.description}
+              onChange={(e) => update('description', e.target.value)}
+              placeholder="Topics, prerequisites, materials to bring."
+              rows={4}
+            />
+          </div>
+
+          <div className="split-narrow">
+            <div className="field">
+              <label>Start time <span className="req">*</span></label>
               <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
+                className="input"
+                type="datetime-local"
+                value={form.startTime}
+                onChange={(e) => update('startTime', e.target.value)}
                 required
-                className="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] focus:bg-white transition-all"
-                placeholder="e.g., Physics Lecture"
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] focus:bg-white transition-all"
-                placeholder="Event description"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Start Time</label>
-                <input
-                  type="datetime-local"
-                  name="startTime"
-                  value={formData.startTime}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] focus:bg-white transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
-                <input
-                  type="datetime-local"
-                  name="endTime"
-                  value={formData.endTime}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] focus:bg-white transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+            <div className="field">
+              <label>End time <span className="req">*</span></label>
               <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
+                className="input"
+                type="datetime-local"
+                value={form.endTime}
+                onChange={(e) => update('endTime', e.target.value)}
                 required
-                className="w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] focus:bg-white transition-all"
-                placeholder="e.g., Room 101"
               />
             </div>
+          </div>
 
-            <div className="flex flex-wrap gap-3">
-              <button type="submit" className="px-4 py-2.5 text-sm font-semibold text-white bg-[#E05F6B] hover:bg-[#d4515d] rounded-xl transition-all shadow-sm">
-                Create Schedule
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/instructor')}
-                className="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="field">
+            <label>Location <span className="req">*</span></label>
+            <input
+              className="input"
+              value={form.location}
+              onChange={(e) => update('location', e.target.value)}
+              placeholder="Building & room"
+              required
+            />
+          </div>
+
+          <div className="row gap-3" style={{ justifyContent: 'flex-end', paddingTop: 8, borderTop: '1px solid var(--rule-soft)' }}>
+            <button type="button" className="btn btn-ghost" onClick={() => navigate('/instructor')}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-accent" disabled={submitting}>
+              {submitting ? 'Saving…' : <>Create schedule {I.arrowRight(14)}</>}
+            </button>
+          </div>
+        </form>
       </div>
     </Layout>
   );

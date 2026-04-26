@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  FileText,
-  UserCheck,
-  RefreshCw,
-  CheckCircle2,
-  Lock,
-  Bell,
-} from 'lucide-react';
 import Layout from '../../components/Layout';
+import I from '../../components/Icon';
 import { api } from '../../services/api';
 
 function timeAgo(dateStr) {
@@ -15,74 +8,71 @@ function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} minute${mins > 1 ? 's' : ''} ago`;
+  if (mins < 60) return `${mins} min ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hour${hrs > 1 ? 's' : ''} ago`;
+  if (hrs < 24) return `${hrs} hr${hrs > 1 ? 's' : ''} ago`;
   const days = Math.floor(hrs / 24);
-  return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (days === 1) return 'yesterday';
+  return `${days} days ago`;
 }
+
+const TYPE_META = {
+  created:     { glyph: I.send(14),  tone: 'var(--ink-3)',       label: 'created' },
+  assigned:    { glyph: I.users(14), tone: 'var(--st-open)',     label: 'assigned' },
+  in_progress: { glyph: I.spark(14), tone: 'var(--st-progress)', label: 'in progress' },
+  resolved:    { glyph: I.check(14), tone: 'var(--st-resolved)', label: 'resolved' },
+  closed:      { glyph: I.x(14),     tone: 'var(--st-closed)',   label: 'closed' },
+};
+
+const STATUS_FOR_BADGE = {
+  created: 'open',
+  assigned: 'open',
+  in_progress: 'in_progress',
+  resolved: 'resolved',
+  closed: 'closed',
+};
 
 function ticketToNotifications(ticket) {
-  const notifs = [];
-
-  notifs.push({
+  const out = [];
+  out.push({
     id: `created-${ticket.id}`,
-    type: 'ticket',
-    message: `Your ticket #${ticket.id} "${ticket.title}" was submitted successfully.`,
+    type: 'created',
+    msg: `Ticket #${ticket.id} "${ticket.title}" was submitted.`,
     date: ticket.created_at,
-    icon: 'created',
   });
-
   if (ticket.assigned_to) {
-    notifs.push({
+    out.push({
       id: `assigned-${ticket.id}`,
-      type: 'ticket',
-      message: `Ticket #${ticket.id} "${ticket.title}" has been assigned to a staff member.`,
+      type: 'assigned',
+      msg: `Ticket #${ticket.id} "${ticket.title}" was assigned to a staff member.`,
       date: ticket.assigned_at || ticket.updated_at || ticket.created_at,
-      icon: 'assigned',
     });
   }
-
   if (ticket.status === 'in_progress') {
-    notifs.push({
+    out.push({
       id: `inprogress-${ticket.id}`,
-      type: 'ticket',
-      message: `Ticket #${ticket.id} "${ticket.title}" is now being worked on.`,
+      type: 'in_progress',
+      msg: `Ticket #${ticket.id} "${ticket.title}" is now being worked on.`,
       date: ticket.updated_at || ticket.created_at,
-      icon: 'in_progress',
     });
   }
-
   if (ticket.status === 'resolved') {
-    notifs.push({
+    out.push({
       id: `resolved-${ticket.id}`,
-      type: 'ticket',
-      message: `Ticket #${ticket.id} "${ticket.title}" has been resolved.`,
+      type: 'resolved',
+      msg: `Ticket #${ticket.id} "${ticket.title}" was resolved — please review and close.`,
       date: ticket.resolved_at || ticket.updated_at || ticket.created_at,
-      icon: 'resolved',
     });
   }
-
   if (ticket.status === 'closed') {
-    notifs.push({
+    out.push({
       id: `closed-${ticket.id}`,
-      type: 'ticket',
-      message: `Ticket #${ticket.id} "${ticket.title}" has been closed.`,
+      type: 'closed',
+      msg: `Ticket #${ticket.id} "${ticket.title}" was closed.`,
       date: ticket.updated_at || ticket.created_at,
-      icon: 'closed',
     });
   }
-
-  return notifs;
-}
-
-function NotificationIcon({ type }) {
-  if (type === 'created') return <FileText size={16} className="text-blue-600" />;
-  if (type === 'assigned') return <UserCheck size={16} className="text-violet-600" />;
-  if (type === 'in_progress') return <RefreshCw size={16} className="text-amber-600" />;
-  if (type === 'resolved') return <CheckCircle2 size={16} className="text-emerald-600" />;
-  if (type === 'closed') return <Lock size={16} className="text-slate-600" />;
-  return <Bell size={16} className="text-gray-600" />;
+  return out;
 }
 
 export default function Notifications() {
@@ -91,22 +81,16 @@ export default function Notifications() {
   const user = JSON.parse(localStorage.getItem('runcademic_user') || '{}');
 
   useEffect(() => {
-    const fetchNotifications = async () => {
+    const run = async () => {
       setLoading(true);
       try {
-        const response = await api.tickets.list();
-        const data = response.data?.data || response.data || [];
-
-        // Filter only this student's tickets
-        const myTickets = data.filter(
-          (t) => Number(t.user_id || t.created_by) === Number(user.id)
+        const res = await api.tickets.list();
+        const data = res.data?.data || res.data || [];
+        const mine = data.filter(
+          (t) => Number(t.user_id || t.created_by) === Number(user.id),
         );
-
-        // Generate notifications from real ticket events
-        const notifs = myTickets
-          .flatMap(ticketToNotifications)
+        const notifs = mine.flatMap(ticketToNotifications)
           .sort((a, b) => new Date(b.date) - new Date(a.date));
-
         setNotifications(notifs);
       } catch {
         setNotifications([]);
@@ -114,55 +98,71 @@ export default function Notifications() {
         setLoading(false);
       }
     };
-
-    fetchNotifications();
+    run();
   }, [user.id]);
 
   return (
     <Layout role="student">
-      <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4">
+      <div className="page" style={{ maxWidth: 760 }}>
+        <div className="page-head">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-            <p className="text-gray-500 text-sm mt-1">Stay updated with your ticket activity.</p>
+            <div className="eyebrow">Student portal · Activity</div>
+            <h1>
+              Notifications{' '}
+              <span className="mono" style={{ fontSize: 18, color: 'var(--ink-4)', verticalAlign: 'middle', marginLeft: 8 }}>
+                {notifications.length}
+              </span>
+            </h1>
+            <p className="sub">Lifecycle events from your tickets, in chronological order.</p>
           </div>
-          {notifications.length > 0 && (
-            <span className="px-3 py-1.5 text-sm font-semibold text-white bg-[#E05F6B] rounded-xl shadow-sm">
-              {notifications.length}
-            </span>
-          )}
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-            <p className="text-gray-500">Loading notifications...</p>
-          </div>
+          <div className="card card-pad"><p className="muted">Loading notifications…</p></div>
         ) : notifications.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#E05F6B]/10 mb-4">
-              <Bell size={22} className="text-[#E05F6B]" />
+          <div className="card">
+            <div className="empty">
+              <div className="glyph">¶</div>
+              <h4>You're all caught up</h4>
+              <p>Notifications will appear here as your tickets move through the queue.</p>
             </div>
-            <p className="text-gray-600 text-lg">No notifications yet.</p>
-            <p className="text-gray-400 text-sm mt-2">Notifications will appear here when your tickets are updated.</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {notifications.map((notif) => (
-              <div key={notif.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-                      <NotificationIcon type={notif.icon} />
-                    </div>
-                    <div>
-                      <p className="text-gray-800 font-medium">{notif.message}</p>
-                      <p className="text-sm text-gray-400 mt-1">{timeAgo(notif.date)}</p>
-                    </div>
+          <div className="card">
+            {notifications.map((n, i) => {
+              const m = TYPE_META[n.type] || TYPE_META.created;
+              const badgeStatus = STATUS_FOR_BADGE[n.type] || 'open';
+              return (
+                <div
+                  key={n.id}
+                  style={{
+                    padding: '16px 20px',
+                    borderTop: i === 0 ? 0 : '1px solid var(--rule-soft)',
+                    display: 'grid',
+                    gridTemplateColumns: '28px 1fr auto',
+                    gap: 14,
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 4,
+                    background: 'var(--surface-2)',
+                    display: 'grid', placeItems: 'center',
+                    color: m.tone,
+                  }}>
+                    {m.glyph}
                   </div>
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-800 shrink-0">ticket</span>
+                  <div>
+                    <div style={{ color: 'var(--ink)', fontSize: 13.5 }}>{n.msg}</div>
+                    <div className="fine mono" style={{ marginTop: 4 }}>{timeAgo(n.date)}</div>
+                  </div>
+                  <span className="badge" data-status={badgeStatus}>
+                    <span className="dot" />
+                    {m.label}
+                  </span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -1,32 +1,88 @@
+import { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
+import I from '../../components/Icon';
+import { api } from '../../services/api';
+
+function formatWeekday(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function formatTime(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
 
 export default function Schedules() {
-  const mockSchedules = [
-    { id: 1, title: 'Physics Lecture', date: '2024-04-20', time: '10:00 AM - 11:30 AM', location: 'Room 101' },
-    { id: 2, title: 'Mathematics Lab', date: '2024-04-21', time: '2:00 PM - 4:00 PM', location: 'Lab 5' },
-    { id: 3, title: 'Chemistry Tutorial', date: '2024-04-22', time: '3:00 PM - 4:00 PM', location: 'Room 205' },
-  ];
+  const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.schedules
+      .list()
+      .then((res) => setSchedules(res.data?.data || res.data || []))
+      .catch((err) => setError(err.response?.data?.message || 'Failed to load schedules.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <Layout role="student">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Schedules</h1>
-          <p className="text-gray-500 text-sm mt-1">View your upcoming classes and appointments.</p>
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Student portal · This week</div>
+            <h1>
+              Your <span className="serif italic" style={{ color: 'var(--accent)' }}>schedule</span>.
+            </h1>
+            <p className="sub">Lectures, labs, and office hours coming up.</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {mockSchedules.map((schedule) => (
-            <div key={schedule.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">{schedule.title}</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p><span className="font-semibold text-gray-700">Date:</span> {schedule.date}</p>
-                <p><span className="font-semibold text-gray-700">Time:</span> {schedule.time}</p>
-                <p><span className="font-semibold text-gray-700">Location:</span> {schedule.location}</p>
-              </div>
+        {error && (
+          <div className="alert" data-tone="error" style={{ marginBottom: 14 }}>
+            <span className="ic">{I.alert(16)}</span><span>{error}</span>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="card card-pad"><p className="muted">Loading schedule…</p></div>
+        ) : schedules.length === 0 ? (
+          <div className="card">
+            <div className="empty">
+              <div className="glyph">¶</div>
+              <h4>Nothing on the calendar</h4>
+              <p>You have no upcoming sessions in your schedule yet.</p>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {schedules.map((s) => {
+              const start = s.start_time || s.startTime || s.date;
+              const end = s.end_time || s.endTime;
+              return (
+                <div key={s.id} className="card card-pad" style={{ padding: 20 }}>
+                  <div className="eyebrow" style={{ marginBottom: 8 }}>{formatWeekday(start)}</div>
+                  <div className="serif" style={{ fontSize: 18, fontWeight: 500, lineHeight: 1.25, marginBottom: 14 }}>
+                    {s.title}
+                  </div>
+                  <div className="row gap-2" style={{ color: 'var(--ink-3)', fontSize: 12.5, marginBottom: 6 }}>
+                    <span style={{ color: 'var(--accent)' }}>{I.clock(13)}</span>
+                    <span className="mono">{formatTime(start)}{end ? `–${formatTime(end)}` : ''}</span>
+                  </div>
+                  <div className="row gap-2" style={{ color: 'var(--ink-3)', fontSize: 12.5 }}>
+                    <span style={{ color: 'var(--ink-4)' }}>{I.pin(13)}</span>
+                    <span>{s.location || '—'}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </Layout>
   );
