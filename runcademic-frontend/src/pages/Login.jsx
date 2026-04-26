@@ -109,19 +109,19 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left panel */}
-      <div className="hidden lg:flex w-2/5 bg-[#141C27] flex-col justify-between p-12">
+      <div className="w-full lg:w-2/5 bg-[#141C27] flex flex-col justify-between p-6 sm:p-8 lg:p-12 min-h-[360px] lg:min-h-screen">
         <div className="pt-1">
           <img
             src="/runcademic-home-logo.png"
             alt="Runcademic logo"
-            className="w-[240px] h-auto object-contain"
+            className="w-[190px] sm:w-[220px] lg:w-[240px] h-auto object-contain"
           />
         </div>
 
         <div>
-          <h1 className="text-4xl font-bold text-white leading-snug mb-4">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white leading-snug mb-4">
             Manage your<br />
             <span className="text-[#E05F6B]">university</span><br />
             seamlessly.
@@ -152,7 +152,7 @@ export default function Login() {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-[#F5F6FA]">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-[#F5F6FA]">
         <div className="login-panel w-full max-w-md">
 
           {step === 'role' ? (
