@@ -1,164 +1,147 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Ticket, CalendarDays, CheckSquare, Plus, Clock3 } from 'lucide-react';
 import Layout from '../../components/Layout';
-import StatCard from '../../components/StatCard';
 import Badge from '../../components/Badge';
+import I from '../../components/Icon';
 import { api } from '../../services/api';
-import { animateCards, animateList, animatePageEnter } from '../../utils/animations';
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 5) return 'Good night';
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  if (h < 21) return 'Good evening';
+  return 'Good night';
+}
+
+const firstName = (n) => (n ? n.split(' ')[0] : 'there');
 
 export default function InstructorDashboard() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const pageRef = useRef(null);
   const user = JSON.parse(localStorage.getItem('runcademic_user') || '{}');
 
   useEffect(() => {
     api.tickets.list()
-      .then(res => {
+      .then((res) => {
         const all = res.data?.data || res.data || [];
-        const assigned = all.filter(t =>
-          Number(t.assigned_to) === Number(user.id)
-        );
+        const assigned = all.filter((t) => Number(t.assigned_to) === Number(user.id));
         setTickets(assigned);
       })
       .catch(() => setTickets([]))
       .finally(() => setLoading(false));
   }, [user.id]);
 
-  useEffect(() => {
-    animatePageEnter('.page-content');
-  }, []);
+  const counts = useMemo(() => {
+    const c = { open: 0, in_progress: 0, waiting: 0, resolved: 0, closed: 0 };
+    tickets.forEach((t) => { if (c[t.status] !== undefined) c[t.status] += 1; });
+    return c;
+  }, [tickets]);
 
-  useEffect(() => {
-    if (!loading) {
-      animateCards('.stat-card');
-      animateList('.quick-action');
-      animateList('.ticket-row');
-    }
-  }, [loading, tickets.length]);
-
-  const open = tickets.filter(t => t.status === 'open').length;
-  const inProgress = tickets.filter(t => t.status === 'in_progress').length;
-  const recent = tickets.slice(0, 4);
+  const total = tickets.length;
+  const recent = tickets.slice(0, 5);
+  const activeFocus = counts.open + counts.in_progress;
 
   return (
     <Layout role="instructor">
-      <div ref={pageRef} className="page-content">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Welcome, {user.name?.split(' ')[0] || 'Instructor'}!
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Manage your classes, schedules, and assigned tickets.
-        </p>
-      </div>
-
-      {/* Stats */}
-      {loading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="skeleton h-24 w-full" />
-          ))}
-        </div>
-      )}
-      {!loading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="stat-card"><StatCard icon={Ticket} label="Assigned Tickets" value={tickets.length} color="blue" /></div>
-          <div className="stat-card"><StatCard icon={Clock3} label="Open" value={open} color="coral" /></div>
-          <div className="stat-card"><StatCard icon={CheckSquare} label="In Progress" value={inProgress} color="yellow" /></div>
-          <div className="stat-card"><StatCard icon={CalendarDays} label="Schedules" value="—" color="green" /></div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Assigned Tickets */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-            <h2 className="text-sm font-semibold text-gray-800">Assigned Tickets</h2>
-            <Link to="/instructor/tickets" className="text-xs text-[#E05F6B] font-semibold hover:underline">
-              View all
-            </Link>
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Instructor portal · Spring 2026</div>
+            <h1>{getGreeting()}, <span className="serif italic" style={{ color: 'var(--accent)' }}>Dr. {firstName(user.name)}</span>.</h1>
+            <p className="sub">Tickets that need your attention today.</p>
           </div>
-          <div className="divide-y divide-gray-50">
-            {loading ? (
-              <div className="px-6 py-6 space-y-3">
-                {[1, 2, 3].map(i => <div key={i} className="skeleton h-12 w-full" />)}
-              </div>
-            ) : recent.length === 0 ? (
-              <div className="px-6 py-10 text-center text-gray-400 text-sm">
-                No tickets assigned to you yet.
-              </div>
-            ) : (
-              recent.map(t => (
-                <div key={t.id} className="ticket-row flex items-center justify-between px-6 py-4 hover:bg-gray-50/50 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                      <span className="text-xs font-bold text-gray-500">#{t.id}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{t.title}</p>
-                      <p className="text-xs text-gray-400 capitalize">
-                        {t.category || 'general'} · {t.priority || 'medium'} priority
-                      </p>
-                    </div>
-                  </div>
-                  <Badge status={t.status} />
-                </div>
-              ))
-            )}
-          </div>
+          <Link to="/instructor/create-schedule" className="btn btn-accent">{I.plus(14)} New schedule</Link>
         </div>
 
-        {/* Quick Actions */}
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h2 className="text-sm font-semibold text-gray-800 mb-4">Quick Actions</h2>
-            <div className="space-y-2">
-              <Link to="/instructor/tickets"
-                className="quick-action flex items-center gap-3 p-3 rounded-xl bg-[#E05F6B]/5 hover:bg-[#E05F6B]/10 border border-[#E05F6B]/10 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-[#E05F6B] flex items-center justify-center shrink-0">
-                  <Ticket size={15} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">Assigned Tickets</p>
-                  <p className="text-xs text-gray-400">Review student requests</p>
-                </div>
-              </Link>
-              <Link to="/instructor/create-schedule"
-                className="quick-action flex items-center gap-3 p-3 rounded-xl bg-blue-50 hover:bg-blue-100/60 border border-blue-100 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
-                  <Plus size={15} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">Create Schedule</p>
-                  <p className="text-xs text-gray-400">Add a new event</p>
-                </div>
-              </Link>
-              <Link to="/instructor/schedules"
-                className="quick-action flex items-center gap-3 p-3 rounded-xl bg-emerald-50 hover:bg-emerald-100/60 border border-emerald-100 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
-                  <CalendarDays size={15} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">My Schedules</p>
-                  <p className="text-xs text-gray-400">View your events</p>
-                </div>
-              </Link>
-              <Link to="/instructor/tasks"
-                className="quick-action flex items-center gap-3 p-3 rounded-xl bg-violet-50 hover:bg-violet-100/60 border border-violet-100 transition-colors">
-                <div className="w-8 h-8 rounded-lg bg-violet-500 flex items-center justify-center shrink-0">
-                  <CheckSquare size={15} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">My Tasks</p>
-                  <p className="text-xs text-gray-400">Track your tasks</p>
-                </div>
-              </Link>
+        <div className="hero-metric">
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div className="hero-eyebrow">{I.bookmark(14)} Active queue · open + in progress</div>
+            <div className="hero-num">{loading ? '—' : activeFocus}</div>
+            <div className="hero-cap">
+              <em>{loading ? '…' : `${activeFocus} tickets`}</em> waiting on you across the term.
+            </div>
+          </div>
+          <div className="chip-row">
+            <div className="chip">
+              <div className="chip-label">Assigned</div>
+              <div className="chip-num">{loading ? '—' : total}</div>
+            </div>
+            <div className="chip">
+              <div className="chip-label"><span className="dot" style={{ background: 'var(--st-open)' }} />Open</div>
+              <div className="chip-num">{loading ? '—' : counts.open}</div>
+            </div>
+            <div className="chip">
+              <div className="chip-label"><span className="dot" style={{ background: 'var(--st-progress)' }} />In progress</div>
+              <div className="chip-num">{loading ? '—' : counts.in_progress}</div>
             </div>
           </div>
         </div>
-      </div>
+
+        <div className="split">
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Assigned tickets</h3>
+                <div className="fine" style={{ marginTop: 2 }}>Last {recent.length} of {total}</div>
+              </div>
+              <Link to="/instructor/tickets" className="btn btn-ghost btn-sm">View all {I.arrowRight(12)}</Link>
+            </div>
+            <div className="list">
+              {loading ? (
+                <div className="empty"><p>Loading…</p></div>
+              ) : recent.length === 0 ? (
+                <div className="empty">
+                  <div className="glyph">¶</div>
+                  <h4>Your queue is clear</h4>
+                  <p>No tickets are currently assigned to you.</p>
+                </div>
+              ) : recent.map((t) => (
+                <Link key={t.id} to="/instructor/tickets" className="list-row">
+                  <span className="id mono">#{t.id}</span>
+                  <div>
+                    <div className="ttl">{t.title}</div>
+                    <div className="meta">
+                      <span style={{ textTransform: 'capitalize' }}>{t.category || 'general'}</span>
+                      <span style={{ color: 'var(--ink-4)' }}>·</span>
+                      <span className="pri" data-pri={t.priority || 'medium'}>{t.priority || 'medium'}</span>
+                    </div>
+                  </div>
+                  <Badge status={t.status} />
+                  <span className="row-action">{I.arrowRight(12)}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="col gap-6">
+            <div className="card">
+              <div className="card-head"><h3 className="card-title">Quick actions</h3></div>
+              <div className="qa">
+                <Link to="/instructor/tickets" className="qa-item">
+                  <span className="ic">{I.inbox(16)}</span>
+                  <div><div style={{ fontWeight: 500 }}>Assigned tickets</div><div className="fine">Review queue</div></div>
+                  <span className="arrow">{I.arrowRight(14)}</span>
+                </Link>
+                <Link to="/instructor/create-schedule" className="qa-item">
+                  <span className="ic">{I.send(16)}</span>
+                  <div><div style={{ fontWeight: 500 }}>Create schedule</div><div className="fine">Add an event</div></div>
+                  <span className="arrow">{I.arrowRight(14)}</span>
+                </Link>
+                <Link to="/instructor/schedules" className="qa-item">
+                  <span className="ic">{I.calendar(16)}</span>
+                  <div><div style={{ fontWeight: 500 }}>My schedules</div><div className="fine">This week</div></div>
+                  <span className="arrow">{I.arrowRight(14)}</span>
+                </Link>
+                <Link to="/instructor/tasks" className="qa-item">
+                  <span className="ic">{I.tasks(16)}</span>
+                  <div><div style={{ fontWeight: 500 }}>My tasks</div><div className="fine">Track work</div></div>
+                  <span className="arrow">{I.arrowRight(14)}</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
   );

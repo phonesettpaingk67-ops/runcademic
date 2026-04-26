@@ -1,36 +1,71 @@
-import { Menu } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import I from './Icon';
+import { useTheme } from '../utils/theme';
+
+const ROLE_LABEL = { student: 'Student', instructor: 'Instructor', admin: 'Admin' };
+
+const PAGE_TITLES = {
+  '/student': 'Dashboard',
+  '/student/submit-ticket': 'Submit Ticket',
+  '/student/tickets': 'My Tickets',
+  '/student/schedules': 'Schedules',
+  '/student/notifications': 'Notifications',
+  '/student/assignments': 'Assignments',
+  '/student/grades': 'Grades',
+  '/instructor': 'Dashboard',
+  '/instructor/tickets': 'Assigned Tickets',
+  '/instructor/create-schedule': 'Create Schedule',
+  '/instructor/schedules': 'My Schedules',
+  '/instructor/tasks': 'My Tasks',
+  '/instructor/students': 'My Students',
+  '/instructor/grading': 'Assignment Grading',
+  '/instructor/reports': 'Reports',
+  '/admin': 'Dashboard',
+  '/admin/tickets': 'All Tickets',
+  '/admin/users': 'Users',
+  '/admin/departments': 'Departments',
+  '/admin/schedules': 'Schedules',
+  '/admin/reports': 'Reports & Analytics',
+};
+
+function pageTitle(pathname) {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+  // best-effort fallback
+  const last = pathname.split('/').filter(Boolean).pop() || '';
+  return last.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || 'Dashboard';
+}
 
 export default function Navbar({ role, onMenuToggle }) {
-  const user = JSON.parse(localStorage.getItem('runcademic_user') || '{}');
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const { theme, setTheme } = useTheme();
+  const { pathname } = useLocation();
 
   return (
-    <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-20">
-      <div className="flex items-center gap-3 min-w-0">
-        <button
-          type="button"
-          onClick={onMenuToggle}
-          className="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
-          aria-label="Open menu"
-        >
-          <Menu size={18} />
+    <div className="topbar">
+      <button className="tb-menu" onClick={onMenuToggle} aria-label="Open menu">
+        {I.menu(20)}
+      </button>
+      <div className="crumbs">
+        <span>{ROLE_LABEL[role] || 'Portal'}</span>
+        <span className="sep">/</span>
+        <span className="here">{pageTitle(pathname)}</span>
+      </div>
+      <div className="search">
+        <span style={{ color: 'var(--ink-4)' }}>{I.search(14)}</span>
+        <input placeholder="Search tickets, people, courses…" />
+        <span className="kbd">⌘K</span>
+      </div>
+      <div className="tb-toggle" role="group" aria-label="Theme">
+        <button data-on={theme === 'light'} onClick={() => setTheme('light')} aria-label="Light mode" title="Light">
+          {I.sun(14)}
         </button>
-        <div className="min-w-0">
-          <p className="hidden sm:block text-xs text-gray-400 font-medium truncate">{today}</p>
-          <p className="text-sm font-semibold text-gray-700 capitalize truncate">{role} Portal</p>
-        </div>
+        <button data-on={theme === 'dark'} onClick={() => setTheme('dark')} aria-label="Dark mode" title="Dark">
+          {I.moon(14)}
+        </button>
       </div>
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        <div className="text-right hidden sm:block">
-          <p className="text-sm font-semibold text-gray-800 leading-tight truncate max-w-[180px]">{user.name || 'User'}</p>
-          <p className="text-xs text-gray-400 capitalize">{role}</p>
-        </div>
-        <div className="w-9 h-9 rounded-full bg-[#E05F6B]/10 border-2 border-[#E05F6B]/20 flex items-center justify-center">
-          <span className="text-[#E05F6B] text-xs font-bold">
-            {(user.name || user.email || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-          </span>
-        </div>
-      </div>
-    </header>
+      <button className="tb-icon" title="Notifications" aria-label="Notifications">
+        {I.bell(16)}
+        <span className="tb-dot" />
+      </button>
+    </div>
   );
 }

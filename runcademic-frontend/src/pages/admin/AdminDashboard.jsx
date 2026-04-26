@@ -1,178 +1,178 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Ticket,
-  Users,
-  Building2,
-  CalendarDays,
-  BarChart3,
-  AlertTriangle,
-  RefreshCw,
-} from 'lucide-react';
 import Layout from '../../components/Layout';
-import StatCard from '../../components/StatCard';
 import Badge from '../../components/Badge';
+import I from '../../components/Icon';
 import { api } from '../../services/api';
-import { animateCards, animateList, animatePageEnter } from '../../utils/animations';
 
-const DEPARTMENTS = ['general','it','admin','finance','library','registrar','academic'];
+const DEPARTMENTS = ['general', 'it', 'admin', 'finance', 'library', 'registrar', 'academic'];
+
+function fmtDate(str) {
+  if (!str) return '—';
+  return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 export default function AdminDashboard() {
   const [tickets, setTickets] = useState([]);
   const [users, setUsers] = useState([]);
-  const [usersById, setUsersById] = useState({});
   const [loading, setLoading] = useState(true);
-  const pageRef = useRef(null);
 
   useEffect(() => {
     Promise.all([api.tickets.list(), api.users.list()])
       .then(([tr, ur]) => {
-        const t = tr.data?.data || tr.data || [];
-        const u = ur.data?.data || ur.data || [];
-        const map = {};
-        u.forEach(usr => {
-          const id = usr.user_id ?? usr.id;
-          map[id] = usr.name || [usr.first_name, usr.last_name].filter(Boolean).join(' ').trim() || usr.email;
-        });
-        setTickets(t); setUsers(u); setUsersById(map);
+        setTickets(tr.data?.data || tr.data || []);
+        setUsers(ur.data?.data || ur.data || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    animatePageEnter('.page-content');
-  }, []);
+  const counts = useMemo(() => {
+    const c = { open: 0, in_progress: 0, waiting: 0, resolved: 0, closed: 0 };
+    tickets.forEach((t) => { if (c[t.status] !== undefined) c[t.status] += 1; });
+    return c;
+  }, [tickets]);
 
-  useEffect(() => {
-    if (!loading) {
-      animateCards('.stat-card');
-      animateList('.ticket-row');
-    }
-  }, [loading, tickets.length]);
-
-  const open = tickets.filter(t => t.status === 'open').length;
-  const inProgress = tickets.filter(t => t.status === 'in_progress').length;
-  const resolved = tickets.filter(t => ['resolved','closed'].includes(t.status)).length;
+  const total = tickets.length;
   const recent = [...tickets].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 6);
-
-  const QUICK_LINKS = [
-    { to: '/admin/tickets', icon: Ticket, label: 'All Tickets', desc: `${tickets.length} total`, color: 'border-blue-100 bg-blue-50 hover:bg-blue-100/60' },
-    { to: '/admin/users', icon: Users, label: 'Users', desc: `${users.length} registered`, color: 'border-emerald-100 bg-emerald-50 hover:bg-emerald-100/60' },
-    { to: '/admin/departments', icon: Building2, label: 'Departments', desc: `${DEPARTMENTS.length} departments`, color: 'border-violet-100 bg-violet-50 hover:bg-violet-100/60' },
-    { to: '/admin/schedules', icon: CalendarDays, label: 'Schedules', desc: 'View all events', color: 'border-amber-100 bg-amber-50 hover:bg-amber-100/60' },
-    { to: '/admin/reports', icon: BarChart3, label: 'Reports', desc: 'Analytics & insights', color: 'border-rose-100 bg-rose-50 hover:bg-rose-100/60' },
-  ];
+  const activeFocus = counts.open + counts.in_progress;
 
   return (
     <Layout role="admin">
-      <div ref={pageRef} className="page-content">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">Real-time overview of your system.</p>
-      </div>
-
-      {/* Stats */}
-      {loading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="skeleton h-24 w-full" />
-          ))}
-        </div>
-      )}
-      {!loading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="stat-card"><StatCard icon={Ticket} label="Total Tickets" value={tickets.length} color="blue" /></div>
-          <div className="stat-card"><StatCard icon={AlertTriangle} label="Open" value={open} color="red" /></div>
-          <div className="stat-card"><StatCard icon={RefreshCw} label="In Progress" value={inProgress} color="yellow" /></div>
-          <div className="stat-card"><StatCard icon={Users} label="Total Users" value={users.length} color="green" /></div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Tickets Table */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-            <h2 className="text-sm font-semibold text-gray-800">Recent Tickets</h2>
-            <Link to="/admin/tickets" className="text-xs text-[#E05F6B] font-semibold hover:underline">View all</Link>
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Administrator portal · Operations</div>
+            <h1>The campus, <span className="serif italic" style={{ color: 'var(--accent)' }}>at a glance</span>.</h1>
+            <p className="sub">Real-time view of tickets, users and infrastructure.</p>
           </div>
-          {loading ? (
-            <div className="px-6 py-6 space-y-3">
-              {[1, 2, 3].map(i => <div key={i} className="skeleton h-12 w-full" />)}
-            </div>
-          ) : recent.length === 0 ? (
-            <div className="px-6 py-10 text-center text-gray-400 text-sm">No tickets yet.</div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {recent.map(t => (
-                <div key={t.id} className="ticket-row flex items-center justify-between px-6 py-3.5 hover:bg-gray-50/50 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                      <span className="text-[10px] font-bold text-gray-500">#{t.id}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{t.title}</p>
-                      <p className="text-xs text-gray-400">{usersById[t.user_id] || 'Unknown'} · {t.category || 'general'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-4">
-                    <Badge status={t.priority || 'medium'} />
-                    <Badge status={t.status || 'open'} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <Link to="/admin/tickets" className="btn btn-secondary">All tickets {I.arrowRight(14)}</Link>
         </div>
 
-        {/* Right column */}
-        <div className="space-y-4">
-          {/* Quick nav */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h2 className="text-sm font-semibold text-gray-800 mb-3">Quick Navigation</h2>
-            <div className="space-y-2">
-              {QUICK_LINKS.map(q => {
-                const Icon = q.icon;
-                return (
-                <Link key={q.to} to={q.to} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${q.color}`}>
-                  <div className="w-8 h-8 rounded-lg bg-white/70 flex items-center justify-center shrink-0">
-                    <Icon size={16} className="text-slate-700" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">{q.label}</p>
-                    <p className="text-xs text-gray-500">{loading ? '...' : q.desc}</p>
-                  </div>
+        <div className="hero-metric">
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div className="hero-eyebrow">{I.bookmark(14)} Active queue · open + in progress</div>
+            <div className="hero-num">{loading ? '—' : activeFocus}</div>
+            <div className="hero-cap">
+              <em>{loading ? '…' : `${activeFocus} tickets`}</em> active across {DEPARTMENTS.length} departments
+              {loading ? '' : ` · ${users.length} users on file`}.
+            </div>
+          </div>
+          <div className="chip-row">
+            <div className="chip">
+              <div className="chip-label">Total</div>
+              <div className="chip-num">{loading ? '—' : total}</div>
+            </div>
+            <div className="chip">
+              <div className="chip-label"><span className="dot" style={{ background: 'var(--st-open)' }} />Open</div>
+              <div className="chip-num">{loading ? '—' : counts.open}</div>
+            </div>
+            <div className="chip">
+              <div className="chip-label"><span className="dot" style={{ background: 'var(--st-progress)' }} />In progress</div>
+              <div className="chip-num">{loading ? '—' : counts.in_progress}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="split">
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <div className="card-head">
+              <div>
+                <h3 className="card-title">Recent tickets</h3>
+                <div className="fine" style={{ marginTop: 2 }}>Newest {recent.length} of {total}</div>
+              </div>
+              <Link to="/admin/tickets" className="btn btn-ghost btn-sm">View all {I.arrowRight(12)}</Link>
+            </div>
+            {loading ? (
+              <div className="empty"><p>Loading…</p></div>
+            ) : recent.length === 0 ? (
+              <div className="empty">
+                <div className="glyph">¶</div>
+                <h4>No tickets in the system</h4>
+                <p>New requests will appear here as they're submitted.</p>
+              </div>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 80 }}>ID</th>
+                    <th>Title</th>
+                    <th style={{ width: 130 }}>Status</th>
+                    <th style={{ width: 100 }}>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((t) => (
+                    <tr key={t.id}>
+                      <td className="id">#{t.id}</td>
+                      <td className="title">{t.title}</td>
+                      <td><Badge status={t.status} /></td>
+                      <td className="date">{fmtDate(t.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="col gap-6">
+            <div className="card">
+              <div className="card-head"><h3 className="card-title">Operations</h3></div>
+              <div className="qa">
+                <Link to="/admin/tickets" className="qa-item">
+                  <span className="ic">{I.ticket(16)}</span>
+                  <div><div style={{ fontWeight: 500 }}>All tickets</div><div className="fine">{total} total</div></div>
+                  <span className="arrow">{I.arrowRight(14)}</span>
                 </Link>
-              );
-              })}
-            </div>
-          </div>
-
-          {/* Ticket breakdown */}
-          {!loading && tickets.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h2 className="text-sm font-semibold text-gray-800 mb-3">Resolution Rate</h2>
-              <div className="space-y-2.5">
-                {[
-                  { label: 'Open', count: open, color: 'bg-blue-500' },
-                  { label: 'In Progress', count: inProgress, color: 'bg-amber-500' },
-                  { label: 'Resolved / Closed', count: resolved, color: 'bg-emerald-500' },
-                ].map(s => (
-                  <div key={s.label}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-500">{s.label}</span>
-                      <span className="font-semibold text-gray-700">{s.count}</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5">
-                      <div className={`h-1.5 rounded-full ${s.color} transition-all`} style={{ width: `${tickets.length ? (s.count / tickets.length) * 100 : 0}%` }} />
-                    </div>
-                  </div>
-                ))}
+                <Link to="/admin/users" className="qa-item">
+                  <span className="ic">{I.users(16)}</span>
+                  <div><div style={{ fontWeight: 500 }}>Users</div><div className="fine">{users.length} registered</div></div>
+                  <span className="arrow">{I.arrowRight(14)}</span>
+                </Link>
+                <Link to="/admin/departments" className="qa-item">
+                  <span className="ic">{I.building(16)}</span>
+                  <div><div style={{ fontWeight: 500 }}>Departments</div><div className="fine">{DEPARTMENTS.length} configured</div></div>
+                  <span className="arrow">{I.arrowRight(14)}</span>
+                </Link>
+                <Link to="/admin/schedules" className="qa-item">
+                  <span className="ic">{I.calendar(16)}</span>
+                  <div><div style={{ fontWeight: 500 }}>Schedules</div><div className="fine">All events</div></div>
+                  <span className="arrow">{I.arrowRight(14)}</span>
+                </Link>
+                <Link to="/admin/reports" className="qa-item">
+                  <span className="ic">{I.chart(16)}</span>
+                  <div><div style={{ fontWeight: 500 }}>Reports</div><div className="fine">Analytics</div></div>
+                  <span className="arrow">{I.arrowRight(14)}</span>
+                </Link>
               </div>
             </div>
-          )}
+
+            {!loading && total > 0 && (
+              <div className="card card-pad">
+                <div className="row" style={{ justifyContent: 'space-between', marginBottom: 16 }}>
+                  <h3 className="card-title" style={{ fontSize: 16 }}>Status summary</h3>
+                  <span className="fine mono">{total} total</span>
+                </div>
+                <div className="col gap-3">
+                  {['open', 'in_progress', 'waiting', 'resolved', 'closed'].map((s) => {
+                    const v = counts[s] || 0;
+                    const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+                    const kind = s === 'in_progress' ? 'progress' : s;
+                    return (
+                      <div key={s} className="col" style={{ gap: 6 }}>
+                        <div className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}>
+                          <span style={{ color: 'var(--ink-2)', textTransform: 'capitalize' }}>{s.replace('_', ' ')}</span>
+                          <span className="mono fine">{v} · {pct}%</span>
+                        </div>
+                        <div className={`bar s-${kind}`}><span style={{ width: pct + '%' }} /></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       </div>
     </Layout>
   );

@@ -2,6 +2,9 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import { applyTheme, getInitialTheme } from './utils/theme.js'
+
+applyTheme(getInitialTheme())
 
 console.log('main.jsx loading...');
 const root = document.getElementById('root');
