@@ -277,7 +277,7 @@ export default function AllTickets() {
                       {isExpanded && (
                         <tr onClick={(e) => e.stopPropagation()}>
                           <td colSpan={7} style={{ background: 'var(--surface-2)', padding: 24 }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
+                            <div className="expand-grid">
                               <div>
                                 <div className="eyebrow">Description</div>
                                 <p style={{ marginTop: 8, color: 'var(--ink-2)', fontSize: 14 }}>

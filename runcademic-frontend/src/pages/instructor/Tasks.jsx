@@ -33,13 +33,10 @@ export default function Tasks() {
           {tasks.map((t, i) => (
             <div
               key={t.id}
+              className="task-row"
               style={{
                 padding: '18px 22px',
                 borderTop: i === 0 ? 0 : '1px solid var(--rule-soft)',
-                display: 'grid',
-                gridTemplateColumns: '1fr auto auto auto',
-                gap: 18,
-                alignItems: 'center',
               }}
             >
               <div>

@@ -97,7 +97,7 @@ export default function Reports() {
         ) : (
           <>
             <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1,
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 1,
               background: 'var(--rule-soft)', borderRadius: 10, overflow: 'hidden',
               border: '1px solid var(--rule)', marginBottom: 24,
             }}>
@@ -178,7 +178,7 @@ export default function Reports() {
             <div className="card card-pad">
               <h3 className="card-title" style={{ fontSize: 18, marginBottom: 18 }}>Users by role</h3>
               <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1,
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 1,
                 background: 'var(--rule-soft)', borderRadius: 8, overflow: 'hidden',
                 border: '1px solid var(--rule)',
               }}>
