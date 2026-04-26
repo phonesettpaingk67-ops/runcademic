@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import Badge from '../../components/Badge';
 import { api } from '../../services/api';
@@ -23,6 +23,7 @@ export default function MyTickets() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const user = JSON.parse(localStorage.getItem('runcademic_user') || '{}');
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.tickets.list()
@@ -52,7 +53,7 @@ export default function MyTickets() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Tickets</h1>
-          <p className="text-gray-500 text-sm mt-1">Track all your submitted service requests.</p>
+          <p className="text-gray-500 text-sm mt-1">Click any ticket to view details and instructor comments.</p>
         </div>
         <Link to="/student/submit-ticket"
           className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#E05F6B] hover:bg-[#d4515d] rounded-xl transition-all shadow-sm">
@@ -61,7 +62,7 @@ export default function MyTickets() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-1 bg-white border border-gray-100 rounded-xl p-1 shadow-sm mb-6 w-fit">
+      <div className="flex items-center gap-1 bg-white border border-gray-100 rounded-xl p-1 shadow-sm mb-6 w-fit flex-wrap">
         {FILTERS.map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -85,7 +86,9 @@ export default function MyTickets() {
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-gray-400 text-sm mb-3">No tickets found.</p>
-            <Link to="/student/submit-ticket" className="text-xs font-semibold text-[#E05F6B] hover:underline">Submit your first ticket →</Link>
+            <Link to="/student/submit-ticket" className="text-xs font-semibold text-[#E05F6B] hover:underline">
+              Submit your first ticket →
+            </Link>
           </div>
         ) : (
           <table className="w-full text-sm">
@@ -93,21 +96,31 @@ export default function MyTickets() {
               <tr className="border-b border-gray-100">
                 <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Title</th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Department</th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Priority</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Department</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Priority</th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Date</th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.map(t => (
-                <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
+                <tr
+                  key={t.id}
+                  onClick={() => navigate(`/student/tickets/${t.id}`)}
+                  className="hover:bg-gray-50/80 transition-colors cursor-pointer"
+                >
                   <td className="px-5 py-4 text-gray-400 font-mono text-xs">#{t.id}</td>
                   <td className="px-5 py-4 font-medium text-gray-800">{t.title}</td>
-                  <td className="px-5 py-4 text-gray-500 capitalize">{t.department}</td>
-                  <td className="px-5 py-4"><Badge status={t.priority} /></td>
+                  <td className="px-5 py-4 text-gray-500 capitalize hidden sm:table-cell">{t.department}</td>
+                  <td className="px-5 py-4 hidden md:table-cell"><Badge status={t.priority} /></td>
                   <td className="px-5 py-4"><Badge status={t.status} /></td>
-                  <td className="px-5 py-4 text-gray-400 text-xs">{fmtDate(t.created)}</td>
+                  <td className="px-5 py-4 text-gray-400 text-xs hidden lg:table-cell">{fmtDate(t.created)}</td>
+                  <td className="px-5 py-4">
+                    <span className="text-xs font-semibold text-[#E05F6B] hover:underline">
+                      View →
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

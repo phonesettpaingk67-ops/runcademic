@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import StudentDashboard from './pages/student/StudentDashboard';
 import SubmitTicket from './pages/student/SubmitTicket';
 import MyTickets from './pages/student/MyTickets';
+import StudentTicketDetail from './pages/student/TicketDetail';
 import Schedules from './pages/student/Schedules';
 import Notifications from './pages/student/Notifications';
 
@@ -28,7 +29,6 @@ import Departments from './pages/admin/Departments';
 import AllSchedules from './pages/admin/AllSchedules';
 import Reports from './pages/admin/Reports';
 
-// Protected Route Component
 function ProtectedRoute({ children, requiredRole }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ function ProtectedRoute({ children, requiredRole }) {
   }, []);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center h-screen text-gray-400 text-sm">Loading...</div>;
   }
 
   if (!user || user.role !== requiredRole) {
@@ -54,153 +54,35 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Login */}
+        {/* Public */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* Student Routes */}
-        <Route
-          path="/student"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/student/submit-ticket"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <SubmitTicket />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/student/tickets"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <MyTickets />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/student/schedules"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <Schedules />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/student/notifications"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <Notifications />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/student" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
+        <Route path="/student/submit-ticket" element={<ProtectedRoute requiredRole="student"><SubmitTicket /></ProtectedRoute>} />
+        <Route path="/student/tickets" element={<ProtectedRoute requiredRole="student"><MyTickets /></ProtectedRoute>} />
+        <Route path="/student/tickets/:id" element={<ProtectedRoute requiredRole="student"><StudentTicketDetail /></ProtectedRoute>} />
+        <Route path="/student/schedules" element={<ProtectedRoute requiredRole="student"><Schedules /></ProtectedRoute>} />
+        <Route path="/student/notifications" element={<ProtectedRoute requiredRole="student"><Notifications /></ProtectedRoute>} />
 
         {/* Instructor Routes */}
-        <Route
-          path="/instructor"
-          element={
-            <ProtectedRoute requiredRole="instructor">
-              <InstructorDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/instructor/tickets"
-          element={
-            <ProtectedRoute requiredRole="instructor">
-              <AssignedTickets />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/instructor/tickets/:id"
-          element={
-            <ProtectedRoute requiredRole="instructor">
-              <TicketDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/instructor/create-schedule"
-          element={
-            <ProtectedRoute requiredRole="instructor">
-              <CreateSchedule />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/instructor/tasks"
-          element={
-            <ProtectedRoute requiredRole="instructor">
-              <Tasks />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/instructor/schedules"
-          element={
-            <ProtectedRoute requiredRole="instructor">
-              <MySchedules />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/instructor" element={<ProtectedRoute requiredRole="instructor"><InstructorDashboard /></ProtectedRoute>} />
+        <Route path="/instructor/tickets" element={<ProtectedRoute requiredRole="instructor"><AssignedTickets /></ProtectedRoute>} />
+        <Route path="/instructor/tickets/:id" element={<ProtectedRoute requiredRole="instructor"><TicketDetail /></ProtectedRoute>} />
+        <Route path="/instructor/create-schedule" element={<ProtectedRoute requiredRole="instructor"><CreateSchedule /></ProtectedRoute>} />
+        <Route path="/instructor/tasks" element={<ProtectedRoute requiredRole="instructor"><Tasks /></ProtectedRoute>} />
+        <Route path="/instructor/schedules" element={<ProtectedRoute requiredRole="instructor"><MySchedules /></ProtectedRoute>} />
 
         {/* Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/tickets"
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AllTickets />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <UserManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/departments"
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <Departments />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/reports"
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <Reports />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/schedules"
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AllSchedules />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/tickets" element={<ProtectedRoute requiredRole="admin"><AllTickets /></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>} />
+        <Route path="/admin/departments" element={<ProtectedRoute requiredRole="admin"><Departments /></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute requiredRole="admin"><Reports /></ProtectedRoute>} />
+        <Route path="/admin/schedules" element={<ProtectedRoute requiredRole="admin"><AllSchedules /></ProtectedRoute>} />
 
-        {/* Default redirect */}
+        {/* Default */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
