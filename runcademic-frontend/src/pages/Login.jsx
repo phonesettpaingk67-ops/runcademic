@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import I from '../components/Icon';
 
@@ -133,6 +133,14 @@ export default function Login() {
               ))}
               <div className="demo-box" style={{ marginTop: 20 }}>
                 <strong>Demo environment</strong> — credentials prefill on selection.
+              </div>
+              <div className="demo-box" style={{ marginTop: 12 }}>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <strong>New to Runcademic?</strong>
+                  <Link to="/register" className="btn btn-ghost btn-sm" style={{ paddingRight: 0 }}>
+                    Create an account {I.arrowRight(12)}
+                  </Link>
+                </div>
               </div>
             </div>
           )}

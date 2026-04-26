@@ -136,7 +136,7 @@ export default function InstructorDashboard() {
                 recent.map((t) => (
                   <Link
                     key={t.id}
-                    to="/instructor/tickets"
+                    to={`/instructor/tickets/${t.id}`}
                     className="list-row"
                   >
                     <span className="id mono">#{t.id}</span>

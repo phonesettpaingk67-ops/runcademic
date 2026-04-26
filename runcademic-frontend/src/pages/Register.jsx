@@ -1,50 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  GraduationCap,
-  School,
-  ShieldCheck,
-  Ticket,
-  CalendarDays,
-  Zap,
-  ChevronRight,
-  ChevronLeft,
-  Eye,
-  EyeOff,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
 import { api } from '../services/api';
-import { animateLogin, animateList } from '../utils/animations';
+import I from '../components/Icon';
 
 const ROLES = [
-  { key: 'student', label: 'Student', desc: 'Access courses & submit tickets', icon: GraduationCap },
-  { key: 'instructor', label: 'Instructor', desc: 'Manage classes & assignments', icon: School },
-  { key: 'admin', label: 'Admin', desc: 'Full system administration', icon: ShieldCheck },
+  { key: 'student',    name: 'Student',       desc: 'Submit tickets, browse schedules, track requests.', icon: I.capStudent(22) },
+  { key: 'instructor', name: 'Instructor',    desc: 'Manage assigned tickets, schedules, and tasks.',     icon: I.feather(22) },
+  { key: 'admin',      name: 'Administrator', desc: 'Oversee tickets, users, departments, analytics.',    icon: I.shield(22) },
 ];
 
-const FEATURES = [
-  { icon: Ticket, label: 'Smart Ticketing', desc: 'Submit and track service requests easily' },
-  { icon: CalendarDays, label: 'Schedule Management', desc: 'Organize events and appointments' },
-  { icon: Zap, label: 'Real-time Updates', desc: 'Stay notified on all changes instantly' },
-];
-
+const ROLE_LABEL = { student: 'Student', instructor: 'Instructor', admin: 'Administrator' };
 const ROUTABLE_ROLES = new Set(['student', 'instructor', 'admin']);
 
 export default function Register() {
   const navigate = useNavigate();
-  const [step, setStep] = useState('role');
-  const [selectedRole, setSelectedRole] = useState(null);
+  const [step, setStep] = useState(1);
+  const [role, setRole] = useState(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
-  const selectedRoleObj = ROLES.find((r) => r.key === selectedRole);
-  const SelectedRoleIcon = selectedRoleObj?.icon || ShieldCheck;
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     try {
@@ -58,265 +37,205 @@ export default function Register() {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    animateLogin('.register-panel');
-  }, []);
-
-  useEffect(() => {
-    if (step === 'role') {
-      animateList('.role-btn');
-    }
-  }, [step]);
-
-  const handleSelectRole = (role) => {
-    setSelectedRole(role);
-    setName('');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setError('');
-    setStep('form');
+  const pickRole = (r) => {
+    setRole(r);
+    setName(''); setEmail(''); setPassword(''); setConfirmPassword('');
+    setErr('');
+    setStep(2);
   };
 
-  const handleRegister = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-
     if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill in all fields.');
+      setErr('Please fill in all fields.');
       return;
     }
-
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setErr('Passwords do not match.');
       return;
     }
-
-    setLoading(true);
-    setError('');
-
+    setBusy(true);
+    setErr('');
     try {
-      const { data } = await api.auth.register({
-        name,
-        email,
-        password,
-        role: selectedRole,
-      });
-
+      const { data } = await api.auth.register({ name, email, password, role });
       localStorage.setItem('access_token', data.token);
       localStorage.setItem('runcademic_user', JSON.stringify({
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name,
-        role: data.user.role,
+        id: data.user.id, email: data.user.email,
+        name: data.user.name, role: data.user.role,
       }));
-
       navigate(`/${data.user.role}`);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } catch (e2) {
+      setErr(e2.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left panel */}
-      <div className="w-full lg:w-2/5 bg-[#141C27] flex flex-col justify-between p-6 sm:p-8 lg:p-12 min-h-[360px] lg:min-h-screen">
-        <div className="pt-1">
-          <img
-            src="/runcademic-home-logo.png"
-            alt="Runcademic logo"
-            className="w-[190px] sm:w-[220px] lg:w-[240px] h-auto object-contain"
-          />
+    <div className="login-shell">
+      <aside className="login-aside">
+        <div className="login-mark-row">
+          <span className="em" style={{ fontSize: 28 }}>R</span>
+          <span>Runcademic</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.14em', marginLeft: 'auto' }}>EST. 2026 · v4.0</span>
         </div>
+        <h2>Join your <span className="em">university</span> workspace.</h2>
+        <p className="lede">Create an account to submit tickets, manage schedules, and collaborate with your institution — all in a single, calm workspace.</p>
 
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white leading-snug mb-4">
-            Join your<br />
-            <span className="text-[#E05F6B]">university</span><br />
-            workspace.
-          </h1>
-          <p className="text-slate-400 text-sm leading-relaxed">
-            Create your account to submit tickets, manage schedules, and collaborate with your institution.
-          </p>
-
-          <div className="mt-10 space-y-4">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div key={f.label} className="flex items-start gap-3">
-                  <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-                    <Icon size={16} className="text-[#E05F6B]" />
-                  </div>
-                  <div>
-                    <p className="text-white text-sm font-semibold">{f.label}</p>
-                    <p className="text-slate-500 text-xs">{f.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
+        <div className="feature-list">
+          <div className="feature">
+            <div className="feature-num">01</div>
+            <div>
+              <div className="feature-name">Smart Ticketing</div>
+              <div className="feature-desc">Routed by department, prioritized by urgency, tracked through resolution.</div>
+            </div>
+          </div>
+          <div className="feature">
+            <div className="feature-num">02</div>
+            <div>
+              <div className="feature-name">Schedule Management</div>
+              <div className="feature-desc">Lectures, labs, office hours — for students, faculty and rooms alike.</div>
+            </div>
+          </div>
+          <div className="feature">
+            <div className="feature-num">03</div>
+            <div>
+              <div className="feature-name">Real-time Updates</div>
+              <div className="feature-desc">Lifecycle notifications the moment a ticket changes hands.</div>
+            </div>
           </div>
         </div>
+      </aside>
 
-        <p className="text-slate-600 text-xs">© 2025 Runcademic. All rights reserved.</p>
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-[#F5F6FA]">
-        <div className="register-panel w-full max-w-md">
-          {step === 'role' ? (
-            <>
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900">Create account</h2>
-                <p className="text-gray-500 text-sm mt-1">Select your role to continue</p>
+      <main className="login-main">
+        <div className="login-card">
+          {step === 1 && (
+            <div>
+              <div className="login-step-tag">Step 01 / 02 · Choose your role</div>
+              <h3>Create account.</h3>
+              <p className="sub">Select the role that matches your place on campus.</p>
+              {ROLES.map((r) => (
+                <button key={r.key} className="role-card" onClick={() => pickRole(r.key)}>
+                  <div className="role-ic">{r.icon}</div>
+                  <div>
+                    <div className="role-name">{r.name}</div>
+                    <div className="role-desc">{r.desc}</div>
+                  </div>
+                  <span className="role-arr">{I.arrowRight(18)}</span>
+                </button>
+              ))}
+              <div className="demo-box" style={{ marginTop: 20 }}>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <strong>Already have an account?</strong>
+                  <Link to="/login" className="btn btn-ghost btn-sm" style={{ paddingRight: 0 }}>
+                    Sign in {I.arrowRight(12)}
+                  </Link>
+                </div>
               </div>
+            </div>
+          )}
 
-              <div className="space-y-3">
-                {ROLES.map((r) => {
-                  const Icon = r.icon;
-                  return (
-                    <button
-                      key={r.key}
-                      onClick={() => handleSelectRole(r.key)}
-                      className="role-btn btn-press w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-200 hover:border-[#E05F6B] hover:shadow-md transition-all duration-200 group text-left"
-                    >
-                      <div className="w-11 h-11 rounded-xl bg-gray-50 group-hover:bg-[#E05F6B]/10 flex items-center justify-center transition-colors shrink-0">
-                        <Icon size={20} className="text-slate-600 group-hover:text-[#E05F6B]" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-900">{r.label}</p>
-                        <p className="text-xs text-gray-400">{r.desc}</p>
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 group-hover:text-[#E05F6B] transition-colors" />
-                    </button>
-                  );
-                })}
-              </div>
-
-              <p className="text-sm text-gray-500 mt-6">
-                Already have an account?{' '}
-                <Link to="/login" className="text-[#E05F6B] font-semibold hover:underline">Sign in</Link>
-              </p>
-            </>
-          ) : (
-            <>
+          {step === 2 && (
+            <form onSubmit={submit}>
               <button
-                onClick={() => { setStep('role'); setError(''); }}
-                className="btn-press flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 mb-8 transition-colors"
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ marginBottom: 16, paddingLeft: 0 }}
+                onClick={() => { setStep(1); setErr(''); }}
               >
-                <ChevronLeft size={16} />
-                Back
+                {I.arrowLeft(14)} Back to roles
               </button>
+              <div className="login-step-tag">Step 02 / 02 · Details · {ROLE_LABEL[role]}</div>
+              <h3>Sign up.</h3>
+              <p className="sub">Tell us a little about you to get started.</p>
 
-              <div className="mb-8 flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[#E05F6B]/10 flex items-center justify-center">
-                  <SelectedRoleIcon size={20} className="text-[#E05F6B]" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Create account</h2>
-                  <p className="text-gray-400 text-sm capitalize">{selectedRole} registration</p>
-                </div>
-              </div>
-
-              {selectedRole === 'admin' && (
-                <div className="mb-4 flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 text-sm">
-                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                  <p>Admin accounts require approval. Contact your system administrator.</p>
+              {role === 'admin' && (
+                <div className="alert" data-tone="error" style={{ marginTop: 16, marginBottom: 4 }}>
+                  <span className="ic">{I.alert(16)}</span>
+                  <span>Admin accounts require approval from your system administrator.</span>
                 </div>
               )}
 
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Full Name</label>
+              <div className="field" style={{ marginTop: 16, marginBottom: 14 }}>
+                <label>Full name</label>
+                <input className="input" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" />
+              </div>
+
+              <div className="field" style={{ marginBottom: 14 }}>
+                <label>Email</label>
+                <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="off" />
+              </div>
+
+              <div className="field" style={{ marginBottom: 14 }}>
+                <label>Password</label>
+                <div style={{ position: 'relative' }}>
                   <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
-                    placeholder="Your full name"
+                    className="input"
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{ paddingRight: 40 }}
+                    placeholder="Create a password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw((s) => !s)}
+                    style={{ position: 'absolute', right: 10, top: 8, color: 'var(--ink-3)', padding: 4 }}
+                    aria-label={showPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showPw ? I.eyeOff(16) : I.eye(16)}
+                  </button>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email address</label>
+              <div className="field" style={{ marginBottom: 8 }}>
+                <label>Confirm password</label>
+                <div style={{ position: 'relative' }}>
                   <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
-                    placeholder="you@example.com"
+                    className="input"
+                    type={showConfirmPw ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={{ paddingRight: 40 }}
+                    placeholder="Repeat your password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPw((s) => !s)}
+                    style={{ position: 'absolute', right: 10, top: 8, color: 'var(--ink-3)', padding: 4 }}
+                    aria-label={showConfirmPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPw ? I.eyeOff(16) : I.eye(16)}
+                  </button>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPass ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 pr-11 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
-                      placeholder="Create a password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPass(!showPass)}
-                      className="btn-press absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
+              {err && (
+                <div className="alert" data-tone="error" style={{ marginTop: 12 }}>
+                  <span className="ic">{I.alert(16)}</span>
+                  <span>{err}</span>
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Confirm Password</label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPass ? 'text' : 'password'}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-4 py-3 pr-11 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E05F6B]/20 focus:border-[#E05F6B] transition-all"
-                      placeholder="Confirm your password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPass(!showConfirmPass)}
-                      className="btn-press absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showConfirmPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
+              <button type="submit" className="btn btn-accent" style={{ marginTop: 16, width: '100%' }} disabled={busy}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  {busy ? 'Creating account…' : 'Create account'}
+                  {!busy && I.arrowRight(14)}
+                </span>
+              </button>
+
+              <div className="demo-box">
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <strong>Already have an account?</strong>
+                  <Link to="/login" className="btn btn-ghost btn-sm" style={{ paddingRight: 0 }}>
+                    Sign in {I.arrowRight(12)}
+                  </Link>
                 </div>
-
-                {error && (
-                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
-                    <AlertCircle size={16} className="shrink-0" />
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-press w-full py-3 text-sm font-semibold text-white bg-[#E05F6B] hover:bg-[#d4515d] rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md mt-2"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 size={16} className="animate-spin" />
-                      Creating account...
-                    </span>
-                  ) : 'Create Account'}
-                </button>
-
-                <p className="text-sm text-gray-500 text-center">
-                  Already have an account?{' '}
-                  <Link to="/login" className="text-[#E05F6B] font-semibold hover:underline">Sign in</Link>
-                </p>
-              </form>
-            </>
+              </div>
+            </form>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
