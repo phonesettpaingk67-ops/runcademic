@@ -921,11 +921,28 @@ a { color: inherit; text-decoration: none; }
     grid-template-columns: 1fr;
     height: auto;
     min-height: 100vh;
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100vw;
   }
-  .login-aside { padding: 32px 28px; min-height: auto; overflow: visible; }
+  .login-aside {
+    padding: 32px 24px;
+    min-height: auto;
+    overflow-x: hidden;
+    overflow-y: visible;
+    max-width: 100vw;
+  }
+  .login-aside::after { display: none; }
   .login-aside h2 { font-size: 40px; margin: 32px 0 16px; }
-  .login-main { padding: 28px 20px 60px; overflow: visible; height: auto; }
+  .login-main {
+    padding: 28px 20px 60px;
+    overflow-x: hidden;
+    overflow-y: visible;
+    height: auto;
+    max-width: 100vw;
+  }
+  .login-card { max-width: 100%; }
   .login-card h3 { font-size: 26px; }
   .feature-list { margin-top: 24px; }
   .split-narrow { grid-template-columns: 1fr; }
@@ -966,6 +983,20 @@ a { color: inherit; text-decoration: none; }
     transform: translateX(0);
   }
   .rail-backdrop[data-on="true"] { display: block; }
+
+  /* Mobile rail: sign-out (foot) below brand, hidden scrollbars */
+  .rail .rail-brand { order: 0; }
+  .rail .rail-foot {
+    order: 1;
+    border-top: 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .rail .rail-section { order: 2; }
+  .rail .rail-section { scrollbar-width: none; -ms-overflow-style: none; }
+  .rail .rail-section::-webkit-scrollbar { display: none; }
+  .scroll { scrollbar-width: none; -ms-overflow-style: none; }
+  .scroll::-webkit-scrollbar { display: none; }
+
   .card { border-radius: 8px; }
   .table { min-width: 720px; }
   .card.table-wrap, .card:has(table) { overflow-x: auto; }
