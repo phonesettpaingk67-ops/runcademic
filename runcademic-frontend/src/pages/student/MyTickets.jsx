@@ -86,7 +86,7 @@ export default function MyTickets() {
           ))}
         </div>
 
-        <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="card" style={{ overflowX: 'auto' }}>
           {loading ? (
             <div className="empty"><p>Loading…</p></div>
           ) : error ? (

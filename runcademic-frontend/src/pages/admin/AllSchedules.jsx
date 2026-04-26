@@ -33,7 +33,7 @@ export default function AllSchedules() {
           </div>
         </div>
 
-        <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="card" style={{ overflowX: 'auto' }}>
           {schedules.length === 0 ? (
             <div className="empty">
               <div className="glyph">¶</div>

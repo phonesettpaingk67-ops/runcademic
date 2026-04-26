@@ -238,7 +238,7 @@ export default function AllTickets() {
           </div>
         )}
 
-        <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="card" style={{ overflowX: 'auto' }}>
           {loading ? (
             <div className="empty"><p>Loading tickets…</p></div>
           ) : filteredTickets.length === 0 ? (

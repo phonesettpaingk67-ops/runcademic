@@ -110,7 +110,7 @@ export default function UserManagement() {
           ))}
         </div>
 
-        <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="card" style={{ overflowX: 'auto' }}>
           {loading ? (
             <div className="empty"><p>Loading users…</p></div>
           ) : filtered.length === 0 ? (
